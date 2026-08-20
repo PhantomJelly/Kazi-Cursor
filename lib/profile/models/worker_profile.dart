@@ -171,7 +171,8 @@ class WorkerProfile {
       phone: json['phone'] as String?,
       whatsapp: json['whatsapp'] as String?,
       specializations: (json['specializations'] as List<dynamic>? ?? [])
-          .map((name) => TradeCategory.values.byName(name as String))
+          .map((name) => TradeCategory.tryParse(name as String?))
+          .whereType<TradeCategory>()
           .toList(),
       experience: json['experience'] == null
           ? null

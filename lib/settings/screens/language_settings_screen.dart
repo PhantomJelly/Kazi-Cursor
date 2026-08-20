@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kazi/settings/models/app_language.dart';
 import 'package:kazi/settings/services/settings_store.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
 
@@ -46,7 +47,7 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
                 color: KaziColors.primary, size: 20),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          title: Text('Language', style: KaziTextStyles.button),
+          title: Text(t(context, 'settings.languageTitle'), style: KaziTextStyles.button),
         ),
         body: ListView(
           padding: const EdgeInsets.all(24),

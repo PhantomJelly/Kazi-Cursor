@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kazi/authentication/models/sign_up_data.dart';
-import 'package:kazi/authentication/screens/sign_up_phone_screen.dart';
 import 'package:kazi/authentication/screens/sign_up_profile_screen.dart';
 import 'package:kazi/authentication/services/auth_navigation.dart';
 import 'package:kazi/authentication/services/google_auth_service.dart';
 import 'package:kazi/authentication/services/local_account_store.dart';
 import 'package:kazi/authentication/widgets/auth_footer_link.dart';
 import 'package:kazi/authentication/widgets/google_logo.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
 import 'package:kazi/shared/widgets/kazi_button.dart';
@@ -48,8 +48,8 @@ class _SignUpEmailScreenState extends State<SignUpEmailScreen> {
 
     if (!_isValidEmail(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid email address'),
+        SnackBar(
+          content: Text(t(context, 'auth.validEmail')),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -58,8 +58,8 @@ class _SignUpEmailScreenState extends State<SignUpEmailScreen> {
 
     if (password.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password must be at least 6 characters'),
+        SnackBar(
+          content: Text(t(context, 'auth.passwordMin')),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -68,8 +68,8 @@ class _SignUpEmailScreenState extends State<SignUpEmailScreen> {
 
     if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Passwords do not match'),
+        SnackBar(
+          content: Text(t(context, 'auth.passwordsMismatch')),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -78,8 +78,8 @@ class _SignUpEmailScreenState extends State<SignUpEmailScreen> {
 
     if (LocalAccountStore.instance.exists(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('An account with this email already exists. Sign in instead.'),
+        SnackBar(
+          content: Text(t(context, 'auth.emailExists')),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -102,8 +102,17 @@ class _SignUpEmailScreenState extends State<SignUpEmailScreen> {
       final user = await _googleAuthService.signIn();
       if (!mounted || user == null) return;
 
-      final existing =
-          await LocalAccountStore.instance.signInWithGoogle(user.email);
+      if (user.idToken == null || user.idToken!.isEmpty) {
+        throw Exception('Google did not return an ID token.');
+      }
+
+      await LocalAccountStore.instance.signInWithGoogleToken(
+        idToken: user.idToken!,
+        accessToken: user.accessToken,
+      );
+      if (!mounted) return;
+
+      final existing = LocalAccountStore.instance.current;
       if (!mounted) return;
       if (existing != null) {
         openAccountHome(context, existing);
@@ -124,21 +133,17 @@ class _SignUpEmailScreenState extends State<SignUpEmailScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Google sign-up failed: $error'),
+          content: Text(
+            error is GoogleNotConfiguredException
+                ? t(context, 'auth.googleNotReady')
+                : t(context, 'auth.googleSignUpFailed', {'error': '$error'}),
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );
     } finally {
       if (mounted) setState(() => _isGoogleLoading = false);
     }
-  }
-
-  void _signUpWithPhone() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => const SignUpPhoneScreen(),
-      ),
-    );
   }
 
   @override
@@ -174,12 +179,12 @@ class _SignUpEmailScreenState extends State<SignUpEmailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Create your account',
+                        t(context, 'auth.createAccount'),
                         style: KaziTextStyles.heading,
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Enter your email and password to get started.',
+                        t(context, 'auth.signUpSubtitle'),
                         style: KaziTextStyles.subtitle.copyWith(
                           color: KaziColors.textPrimary,
                         ),
@@ -187,16 +192,16 @@ class _SignUpEmailScreenState extends State<SignUpEmailScreen> {
                       const SizedBox(height: 32),
                       KaziTextField(
                         controller: _emailController,
-                        label: 'Email',
-                        hint: 'you@example.com',
+                        label: t(context, 'common.email'),
+                        hint: t(context, 'hint.email'),
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 20),
                       KaziTextField(
                         controller: _passwordController,
-                        label: 'Password',
-                        hint: 'Create a password',
+                        label: t(context, 'common.password'),
+                        hint: t(context, 'auth.createPassword'),
                         obscureText: _obscurePassword,
                         textInputAction: TextInputAction.next,
                         suffix: IconButton(
@@ -215,8 +220,8 @@ class _SignUpEmailScreenState extends State<SignUpEmailScreen> {
                       const SizedBox(height: 20),
                       KaziTextField(
                         controller: _confirmPasswordController,
-                        label: 'Confirm password',
-                        hint: 'Re-enter your password',
+                        label: t(context, 'auth.confirmPassword'),
+                        hint: t(context, 'auth.reenterPassword'),
                         obscureText: _obscureConfirmPassword,
                         textInputAction: TextInputAction.done,
                         suffix: IconButton(
@@ -237,27 +242,16 @@ class _SignUpEmailScreenState extends State<SignUpEmailScreen> {
                       ),
                       const SizedBox(height: 24),
                       KaziButton(
-                        label: 'Continue',
+                        label: t(context, 'common.continue'),
                         onPressed: _continueWithEmail,
                       ),
                       const SizedBox(height: 16),
                       KaziButton(
-                        label: 'Use Google instead',
+                        label: t(context, 'auth.useGoogle'),
                         variant: KaziButtonVariant.outline,
                         leading: const GoogleLogo(),
                         isLoading: _isGoogleLoading,
                         onPressed: _signUpWithGoogle,
-                      ),
-                      const SizedBox(height: 16),
-                      KaziButton(
-                        label: 'Use phone number instead',
-                        variant: KaziButtonVariant.outline,
-                        leading: const Icon(
-                          Icons.phone_outlined,
-                          color: KaziColors.primary,
-                          size: 20,
-                        ),
-                        onPressed: _signUpWithPhone,
                       ),
                       const SizedBox(height: 24),
                     ],
@@ -267,8 +261,8 @@ class _SignUpEmailScreenState extends State<SignUpEmailScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                 child: AuthFooterLink(
-                  prompt: 'Already have an account?',
-                  actionLabel: 'Sign in',
+                  prompt: t(context, 'auth.alreadyAccount'),
+                  actionLabel: t(context, 'auth.signIn'),
                   onTap: () => Navigator.of(context).pop(),
                 ),
               ),

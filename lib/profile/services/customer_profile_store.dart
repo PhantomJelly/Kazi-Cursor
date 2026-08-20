@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:kazi/authentication/models/sign_up_data.dart';
 import 'package:kazi/authentication/services/local_account_store.dart';
+import 'package:kazi/core_workflow/services/inquiry_store.dart';
 import 'package:kazi/profile/models/customer_profile.dart';
 
 /// In-memory customer profile store (frontend-only until backend exists).
@@ -28,7 +29,7 @@ class CustomerProfileStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateProfile({
+  Future<void> updateProfile({
     required String firstName,
     required String lastName,
     required int age,
@@ -38,8 +39,10 @@ class CustomerProfileStore extends ChangeNotifier {
     String? phone,
     String? whatsapp,
     String? profilePhotoPath,
-  }) {
+  }) async {
     if (_profile == null) return;
+    final previousEmail = _profile!.email;
+    final previousPhone = _profile!.phone ?? '';
     _profile = _profile!.copyWith(
       firstName: firstName,
       lastName: lastName,
@@ -51,7 +54,13 @@ class CustomerProfileStore extends ChangeNotifier {
       whatsapp: whatsapp,
       profilePhotoPath: profilePhotoPath ?? _profile!.profilePhotoPath,
     );
-    _save();
+    notifyListeners();
+    await InquiryStore.instance.syncCustomerContact(
+      previousEmail: previousEmail,
+      previousPhone: previousPhone,
+      customer: _profile!,
+    );
+    await LocalAccountStore.instance.persistCurrent();
   }
 
   void recordContactedWorker(String workerId) {

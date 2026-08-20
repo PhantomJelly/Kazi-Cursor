@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kazi/profile/models/worker_profile.dart';
 import 'package:kazi/profile/services/worker_profile_store.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
 import 'package:kazi/shared/widgets/kazi_button.dart';
@@ -56,9 +57,9 @@ class _WorkerGeneralInfoScreenState extends State<WorkerGeneralInfoScreen> {
     super.dispose();
   }
 
-  void _persist() {
+  Future<void> _persist() async {
     final age = int.tryParse(_ageController.text.trim()) ?? widget.profile.age;
-    WorkerProfileStore.instance.updateGeneralInfo(
+    await WorkerProfileStore.instance.updateGeneralInfo(
       firstName: _firstNameController.text.trim(),
       lastName: _lastNameController.text.trim(),
       age: age,
@@ -70,9 +71,9 @@ class _WorkerGeneralInfoScreenState extends State<WorkerGeneralInfoScreen> {
     );
   }
 
-  void _save() {
-    _persist();
-    Navigator.of(context).pop();
+  Future<void> _save() async {
+    await _persist();
+    if (mounted) Navigator.of(context).pop();
   }
 
   @override
@@ -84,10 +85,10 @@ class _WorkerGeneralInfoScreenState extends State<WorkerGeneralInfoScreen> {
       ),
       child: PopScope(
         canPop: false,
-        onPopInvokedWithResult: (didPop, _) {
+        onPopInvokedWithResult: (didPop, _) async {
           if (didPop) return;
-          _persist();
-          Navigator.of(context).pop();
+          await _persist();
+          if (context.mounted) Navigator.of(context).pop();
         },
         child: Scaffold(
         backgroundColor: KaziColors.white,
@@ -97,9 +98,9 @@ class _WorkerGeneralInfoScreenState extends State<WorkerGeneralInfoScreen> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded,
                 color: KaziColors.primary, size: 20),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(context).maybePop(),
           ),
-          title: Text('General information', style: KaziTextStyles.button),
+          title: Text(t(context, 'profile.general'), style: KaziTextStyles.button),
         ),
         body: SafeArea(
           child: Column(
@@ -112,62 +113,62 @@ class _WorkerGeneralInfoScreenState extends State<WorkerGeneralInfoScreen> {
                     children: [
                       KaziTextField(
                         controller: _firstNameController,
-                        label: 'Name',
-                        hint: 'First name',
+                        label: t(context, 'common.name'),
+                        hint: t(context, 'common.firstName'),
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 16),
                       KaziTextField(
                         controller: _lastNameController,
-                        label: 'Surname',
-                        hint: 'Last name',
+                        label: t(context, 'common.surname'),
+                        hint: t(context, 'common.lastName'),
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 16),
                       KaziTextField(
                         controller: _ageController,
-                        label: 'Age',
-                        hint: 'e.g. 28',
+                        label: t(context, 'common.age'),
+                        hint: t(context, 'hint.age'),
                         keyboardType: TextInputType.number,
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 16),
                       KaziTextField(
                         controller: _townController,
-                        label: 'Town',
-                        hint: 'e.g. Windhoek',
+                        label: t(context, 'common.town'),
+                        hint: t(context, 'hint.town'),
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 16),
                       KaziTextField(
                         controller: _countryController,
-                        label: 'Country',
-                        hint: 'Namibia',
+                        label: t(context, 'common.country'),
+                        hint: t(context, 'hint.country'),
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 28),
-                      Text('Contact', style: KaziTextStyles.label),
+                      Text(t(context, 'common.contact'), style: KaziTextStyles.label),
                       const SizedBox(height: 12),
                       KaziTextField(
                         controller: _emailController,
-                        label: 'Email',
-                        hint: 'you@email.com',
+                        label: t(context, 'common.email'),
+                        hint: t(context, 'hint.emailShort'),
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 16),
                       KaziTextField(
                         controller: _phoneController,
-                        label: 'Phone number',
-                        hint: 'e.g. 081 234 5678',
+                        label: t(context, 'common.phoneNumber'),
+                        hint: t(context, 'hint.phone'),
                         keyboardType: TextInputType.phone,
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 16),
                       KaziTextField(
                         controller: _whatsappController,
-                        label: 'WhatsApp',
-                        hint: 'e.g. 081 234 5678',
+                        label: t(context, 'common.whatsapp'),
+                        hint: t(context, 'hint.phone'),
                         keyboardType: TextInputType.phone,
                         textInputAction: TextInputAction.done,
                       ),
@@ -177,7 +178,7 @@ class _WorkerGeneralInfoScreenState extends State<WorkerGeneralInfoScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                child: KaziButton(label: 'Save', onPressed: _save),
+                child: KaziButton(label: t(context, 'common.save'), onPressed: _save),
               ),
             ],
           ),

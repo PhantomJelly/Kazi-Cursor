@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kazi/authentication/models/user_role.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
 
@@ -18,7 +19,7 @@ class RoleSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('I am a', style: KaziTextStyles.label),
+        Text(t(context, 'auth.iam'), style: KaziTextStyles.label),
         const SizedBox(height: 12),
         Row(
           children: UserRole.values.map((role) {

@@ -1,43 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:kazi/home_dashboard/models/demo_worker.dart';
+import 'package:kazi/home_dashboard/models/directory_worker.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/profile/models/customer_profile.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 
 enum IssueTiming { firstTime, stillOccurring }
 
 extension IssueTimingLabel on IssueTiming {
-  String get label {
-    switch (this) {
-      case IssueTiming.firstTime:
-        return 'First time';
-      case IssueTiming.stillOccurring:
-        return 'Still occurring';
-    }
-  }
+  String get label => tRaw('timing.$name');
 
-  String get description {
-    switch (this) {
-      case IssueTiming.firstTime:
-        return 'It happened once';
-      case IssueTiming.stillOccurring:
-        return 'It is still happening';
-    }
-  }
+  String get description => tRaw('timing.$name.desc');
 }
 
 enum InquiryStatus { pending, accepted, rejected }
 
 extension InquiryStatusStyle on InquiryStatus {
-  String get label {
-    switch (this) {
-      case InquiryStatus.pending:
-        return 'Pending';
-      case InquiryStatus.accepted:
-        return 'Accepted';
-      case InquiryStatus.rejected:
-        return 'Rejected';
-    }
-  }
+  String get label => tRaw('status.$name');
 
   Color get color {
     switch (this) {
@@ -71,6 +49,7 @@ class JobInquiry {
     required this.workerEmail,
     required this.workerPhone,
     required this.workerWhatsapp,
+    this.customerId = '',
     required this.customerName,
     required this.customerTown,
     required this.customerCountry,
@@ -94,6 +73,7 @@ class JobInquiry {
   final String workerEmail;
   final String workerPhone;
   final String workerWhatsapp;
+  final String customerId;
   final String customerName;
   final String customerTown;
   final String customerCountry;
@@ -114,6 +94,14 @@ class JobInquiry {
   JobInquiry copyWith({
     InquiryStatus? status,
     String? rejectionReason,
+    String? customerName,
+    String? customerTown,
+    String? customerCountry,
+    String? customerEmail,
+    String? customerPhone,
+    String? customerWhatsapp,
+    String? description,
+    List<DateTime>? freeDays,
   }) {
     return JobInquiry(
       id: id,
@@ -123,17 +111,18 @@ class JobInquiry {
       workerEmail: workerEmail,
       workerPhone: workerPhone,
       workerWhatsapp: workerWhatsapp,
-      customerName: customerName,
-      customerTown: customerTown,
-      customerCountry: customerCountry,
-      customerEmail: customerEmail,
-      customerPhone: customerPhone,
-      customerWhatsapp: customerWhatsapp,
+      customerId: customerId,
+      customerName: customerName ?? this.customerName,
+      customerTown: customerTown ?? this.customerTown,
+      customerCountry: customerCountry ?? this.customerCountry,
+      customerEmail: customerEmail ?? this.customerEmail,
+      customerPhone: customerPhone ?? this.customerPhone,
+      customerWhatsapp: customerWhatsapp ?? this.customerWhatsapp,
       title: title,
-      description: description,
+      description: description ?? this.description,
       occurredOn: occurredOn,
       timing: timing,
-      freeDays: freeDays,
+      freeDays: freeDays ?? this.freeDays,
       isUrgent: isUrgent,
       status: status ?? this.status,
       rejectionReason: rejectionReason ?? this.rejectionReason,
@@ -141,8 +130,9 @@ class JobInquiry {
   }
 
   factory JobInquiry.fromForm({
-    required DemoWorker worker,
+    required DirectoryWorker worker,
     required CustomerProfile customer,
+    required String customerId,
     required String title,
     required String description,
     required DateTime occurredOn,
@@ -158,6 +148,7 @@ class JobInquiry {
       workerEmail: worker.email,
       workerPhone: worker.phone,
       workerWhatsapp: worker.whatsapp,
+      customerId: customerId,
       customerName: customer.fullName,
       customerTown: customer.town,
       customerCountry: customer.country,
@@ -181,6 +172,7 @@ class JobInquiry {
         'workerEmail': workerEmail,
         'workerPhone': workerPhone,
         'workerWhatsapp': workerWhatsapp,
+        'customerId': customerId,
         'customerName': customerName,
         'customerTown': customerTown,
         'customerCountry': customerCountry,
@@ -200,51 +192,65 @@ class JobInquiry {
   factory JobInquiry.fromJson(Map<String, dynamic> json) {
     return JobInquiry(
       id: json['id'] as String? ?? '',
-      workerId: json['workerId'] as String? ?? '',
-      workerName: json['workerName'] as String? ?? '',
-      workerTown: json['workerTown'] as String? ?? '',
-      workerEmail: json['workerEmail'] as String? ?? '',
-      workerPhone: json['workerPhone'] as String? ?? '',
-      workerWhatsapp: json['workerWhatsapp'] as String? ?? '',
-      customerName: json['customerName'] as String? ?? '',
-      customerTown: json['customerTown'] as String? ?? '',
-      customerCountry: json['customerCountry'] as String? ?? '',
-      customerEmail: json['customerEmail'] as String? ?? '',
-      customerPhone: json['customerPhone'] as String? ?? '',
-      customerWhatsapp: json['customerWhatsapp'] as String? ?? '',
+      workerId:
+          json['workerId'] as String? ?? json['worker_id'] as String? ?? '',
+      workerName:
+          json['workerName'] as String? ?? json['worker_name'] as String? ?? '',
+      workerTown:
+          json['workerTown'] as String? ?? json['worker_town'] as String? ?? '',
+      workerEmail: json['workerEmail'] as String? ??
+          json['worker_email'] as String? ??
+          '',
+      workerPhone: json['workerPhone'] as String? ??
+          json['worker_phone'] as String? ??
+          '',
+      workerWhatsapp: json['workerWhatsapp'] as String? ??
+          json['worker_whatsapp'] as String? ??
+          '',
+      customerId:
+          json['customerId'] as String? ?? json['customer_id'] as String? ?? '',
+      customerName: json['customerName'] as String? ??
+          json['customer_name'] as String? ??
+          '',
+      customerTown: json['customerTown'] as String? ??
+          json['customer_town'] as String? ??
+          '',
+      customerCountry: json['customerCountry'] as String? ??
+          json['customer_country'] as String? ??
+          '',
+      customerEmail: json['customerEmail'] as String? ??
+          json['customer_email'] as String? ??
+          '',
+      customerPhone: json['customerPhone'] as String? ??
+          json['customer_phone'] as String? ??
+          '',
+      customerWhatsapp: json['customerWhatsapp'] as String? ??
+          json['customer_whatsapp'] as String? ??
+          '',
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
-      occurredOn: DateTime.tryParse(json['occurredOn'] as String? ?? '') ??
+      occurredOn: DateTime.tryParse(
+            json['occurredOn'] as String? ?? json['occurred_on'] as String? ?? '',
+          ) ??
           DateTime.now(),
       timing: IssueTiming.values.byName(
         json['timing'] as String? ?? IssueTiming.firstTime.name,
       ),
-      freeDays: (json['freeDays'] as List<dynamic>? ?? [])
+      freeDays: (json['freeDays'] as List<dynamic>? ??
+              json['free_days'] as List<dynamic>? ??
+              [])
           .map((value) => DateTime.tryParse(value as String) ?? DateTime.now())
           .toList(),
-      isUrgent: json['isUrgent'] as bool? ?? false,
+      isUrgent: json['isUrgent'] as bool? ?? json['is_urgent'] as bool? ?? false,
       status: InquiryStatus.values.byName(
         json['status'] as String? ?? InquiryStatus.pending.name,
       ),
-      rejectionReason: json['rejectionReason'] as String?,
+      rejectionReason: json['rejectionReason'] as String? ??
+          json['rejection_reason'] as String?,
     );
   }
 }
 
 String formatInquiryDate(DateTime date) {
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  return '${date.day} ${months[date.month - 1]} ${date.year}';
+  return '${date.day} ${tRaw('month.${date.month}')} ${date.year}';
 }

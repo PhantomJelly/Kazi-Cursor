@@ -1,12 +1,15 @@
-enum WorkExperienceLevel {
-  threeMonthsOrLess('3 months or less'),
-  threeToSixMonths('3–6 months'),
-  sixMonthsToOneYear('6 months – 1 year'),
-  oneToTwoYears('1–2 years'),
-  twoToFiveYears('2–5 years'),
-  fiveToTenYears('5–10 years'),
-  tenPlusYears('10+ years');
+import 'package:kazi/l10n/kazi_l10n.dart';
 
-  const WorkExperienceLevel(this.label);
-  final String label;
+enum WorkExperienceLevel {
+  threeMonthsOrLess,
+  threeToSixMonths,
+  sixMonthsToOneYear,
+  oneToTwoYears,
+  twoToFiveYears,
+  fiveToTenYears,
+  tenPlusYears;
+}
+
+extension WorkExperienceLevelLabel on WorkExperienceLevel {
+  String get label => tRaw('exp.$name');
 }

@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:kazi/profile/services/worker_profile_store.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
+import 'package:kazi/shared/utils/photo_picker.dart';
 import 'package:kazi/shared/utils/platform_image.dart' as platform_image;
 import 'package:kazi/shared/widgets/kazi_button.dart';
+import 'package:kazi/supabase/media_storage.dart';
 
 class WorkerVerificationScreen extends StatefulWidget {
   const WorkerVerificationScreen({super.key});
@@ -16,9 +19,10 @@ class WorkerVerificationScreen extends StatefulWidget {
 }
 
 class _WorkerVerificationScreenState extends State<WorkerVerificationScreen> {
-  final _picker = ImagePicker();
   String? _idDocumentPath;
   String? _faceScanPath;
+  bool _isUploadingId = false;
+  bool _isUploadingFace = false;
 
   @override
   void initState() {
@@ -31,34 +35,47 @@ class _WorkerVerificationScreenState extends State<WorkerVerificationScreen> {
   }
 
   Future<void> _pickIdDocument() async {
-    final file = await _picker.pickImage(
-      source: ImageSource.gallery,
+    if (_isUploadingId) return;
+    setState(() => _isUploadingId = true);
+    final url = await PhotoPicker.pickAndUpload(
+      context,
+      bucket: MediaStorage.verification,
       maxWidth: 1600,
       imageQuality: 90,
     );
-    if (file != null) setState(() => _idDocumentPath = file.path);
+    if (!mounted) return;
+    setState(() {
+      _isUploadingId = false;
+      if (url != null) _idDocumentPath = url;
+    });
   }
 
   Future<void> _scanFace() async {
-    final file = await _picker.pickImage(
-      source: ImageSource.camera,
-      preferredCameraDevice: CameraDevice.front,
-      maxWidth: 1200,
-      imageQuality: 85,
+    if (_isUploadingFace) return;
+    setState(() => _isUploadingFace = true);
+    final url = await PhotoPicker.pickAndUpload(
+      context,
+      bucket: MediaStorage.verification,
+      preferredCamera: CameraDevice.front,
+      cameraOnly: true,
     );
-    if (file != null) setState(() => _faceScanPath = file.path);
+    if (!mounted) return;
+    setState(() {
+      _isUploadingFace = false;
+      if (url != null) _faceScanPath = url;
+    });
   }
 
-  void _persist() {
-    WorkerProfileStore.instance.updateVerification(
+  Future<void> _persist() async {
+    await WorkerProfileStore.instance.updateVerification(
       idDocumentPath: _idDocumentPath,
       faceScanPath: _faceScanPath,
     );
   }
 
-  void _save() {
-    _persist();
-    Navigator.of(context).pop();
+  Future<void> _save() async {
+    await _persist();
+    if (mounted) Navigator.of(context).pop();
   }
 
   @override
@@ -70,10 +87,10 @@ class _WorkerVerificationScreenState extends State<WorkerVerificationScreen> {
       ),
       child: PopScope(
         canPop: false,
-        onPopInvokedWithResult: (didPop, _) {
+        onPopInvokedWithResult: (didPop, _) async {
           if (didPop) return;
-          _persist();
-          Navigator.of(context).pop();
+          await _persist();
+          if (context.mounted) Navigator.of(context).pop();
         },
         child: Scaffold(
         backgroundColor: KaziColors.white,
@@ -83,9 +100,9 @@ class _WorkerVerificationScreenState extends State<WorkerVerificationScreen> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded,
                 color: KaziColors.primary, size: 20),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(context).maybePop(),
           ),
-          title: Text('Verification', style: KaziTextStyles.button),
+          title: Text(t(context, 'profile.verification'), style: KaziTextStyles.button),
         ),
         body: SafeArea(
           child: Column(
@@ -96,34 +113,40 @@ class _WorkerVerificationScreenState extends State<WorkerVerificationScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text('Verify your identity', style: KaziTextStyles.heading),
+                      Text(t(context, 'profile.verifyTitle'), style: KaziTextStyles.heading),
                       const SizedBox(height: 12),
                       Text(
-                        'Upload a clear photo of your ID or passport, then scan your face so customers know you are verified.',
+                        t(context, 'profile.verifyBody'),
                         style: KaziTextStyles.subtitle.copyWith(
                           color: KaziColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 28),
-                      Text('ID or passport', style: KaziTextStyles.label),
+                      Text(t(context, 'profile.idPassport'), style: KaziTextStyles.label),
                       const SizedBox(height: 12),
                       _UploadTile(
-                        label: _idDocumentPath != null
-                            ? 'ID document uploaded'
-                            : 'Upload ID or passport photo',
+                        label: _isUploadingId
+                            ? t(context, 'profile.uploading')
+                            : _idDocumentPath != null
+                                ? t(context, 'profile.idUploaded')
+                                : t(context, 'profile.takeOrChoose'),
                         icon: Icons.badge_outlined,
                         imagePath: _idDocumentPath,
+                        isUploading: _isUploadingId,
                         onTap: _pickIdDocument,
                       ),
                       const SizedBox(height: 24),
-                      Text('Face scan', style: KaziTextStyles.label),
+                      Text(t(context, 'profile.faceScan'), style: KaziTextStyles.label),
                       const SizedBox(height: 12),
                       _UploadTile(
-                        label: _faceScanPath != null
-                            ? 'Face scan complete'
-                            : 'Scan your face with camera',
+                        label: _isUploadingFace
+                            ? t(context, 'profile.uploading')
+                            : _faceScanPath != null
+                                ? t(context, 'profile.faceDone')
+                                : t(context, 'profile.scanFace'),
                         icon: Icons.face_retouching_natural_outlined,
                         imagePath: _faceScanPath,
+                        isUploading: _isUploadingFace,
                         onTap: _scanFace,
                         isCircular: true,
                       ),
@@ -133,7 +156,7 @@ class _WorkerVerificationScreenState extends State<WorkerVerificationScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                child: KaziButton(label: 'Save', onPressed: _save),
+                child: KaziButton(label: t(context, 'common.save'), onPressed: _save),
               ),
             ],
           ),
@@ -151,6 +174,7 @@ class _UploadTile extends StatelessWidget {
     required this.onTap,
     this.imagePath,
     this.isCircular = false,
+    this.isUploading = false,
   });
 
   final String label;
@@ -158,6 +182,7 @@ class _UploadTile extends StatelessWidget {
   final VoidCallback onTap;
   final String? imagePath;
   final bool isCircular;
+  final bool isUploading;
 
   @override
   Widget build(BuildContext context) {
@@ -174,7 +199,16 @@ class _UploadTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            if (hasImage)
+            if (isUploading)
+              const SizedBox(
+                width: 28,
+                height: 28,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: KaziColors.primary,
+                ),
+              )
+            else if (hasImage)
               ClipRRect(
                 borderRadius:
                     isCircular ? BorderRadius.circular(32) : BorderRadius.circular(8),

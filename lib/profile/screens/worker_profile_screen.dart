@@ -5,10 +5,14 @@ import 'package:kazi/core_workflow/services/inquiry_store.dart';
 import 'package:kazi/profile/models/worker_profile.dart';
 import 'package:kazi/profile/screens/worker_profile_sections_screen.dart';
 import 'package:kazi/profile/services/worker_profile_store.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/profile/widgets/profile_avatar.dart';
 import 'package:kazi/profile/widgets/profile_progress_card.dart';
+import 'package:kazi/shared/constants/trade_categories.dart';
+import 'package:kazi/shared/constants/work_experience_levels.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
+import 'package:kazi/shared/utils/contact_actions.dart';
 import 'package:kazi/shared/utils/platform_image.dart' as platform_image;
 
 class WorkerProfileScreen extends StatefulWidget {
@@ -47,8 +51,8 @@ class _WorkerProfileScreenState extends State<WorkerProfileScreen> {
   Widget build(BuildContext context) {
     final profile = WorkerProfileStore.instance.profile;
     if (profile == null) {
-      return const Scaffold(
-        body: Center(child: Text('No worker profile found')),
+      return Scaffold(
+        body: Center(child: Text(t(context, 'profile.noWorker'))),
       );
     }
 
@@ -116,18 +120,18 @@ class _WorkerProfileScreenState extends State<WorkerProfileScreen> {
                   child: GestureDetector(
                     onTap: _openSections,
                     child: Text(
-                      'Edit profile',
+                      t(context, 'common.editProfile'),
                       style: KaziTextStyles.footerLink,
                     ),
                   ),
                 ),
                 if (profile.bio.isNotEmpty) ...[
                   const SizedBox(height: 28),
-                  _InfoSection(title: 'About', value: profile.bio),
+                  _InfoSection(title: t(context, 'common.about'), value: profile.bio),
                 ],
                 if (profile.certifications.isNotEmpty) ...[
                   const SizedBox(height: 24),
-                  Text('Certifications', style: KaziTextStyles.label),
+                  Text(t(context, 'profile.certifications'), style: KaziTextStyles.label),
                   const SizedBox(height: 12),
                   ...profile.certifications.map(
                     (cert) => Container(
@@ -164,44 +168,47 @@ class _WorkerProfileScreenState extends State<WorkerProfileScreen> {
                   ),
                 ],
                 const SizedBox(height: 24),
-                Text('Contact', style: KaziTextStyles.label),
+                Text(t(context, 'common.contact'), style: KaziTextStyles.label),
                 const SizedBox(height: 12),
                 if (profile.email.isNotEmpty)
                   _ContactRow(
                     icon: Icons.email_outlined,
-                    label: 'Email',
+                    label: t(context, 'common.email'),
                     value: profile.email,
+                    kind: ContactKind.email,
                   ),
                 if (profile.phone != null && profile.phone!.isNotEmpty)
                   _ContactRow(
                     icon: Icons.phone_outlined,
-                    label: 'Phone',
+                    label: t(context, 'common.phone'),
                     value: profile.phone!,
+                    kind: ContactKind.phone,
                   ),
                 if (profile.whatsapp != null && profile.whatsapp!.isNotEmpty)
                   _ContactRow(
                     icon: Icons.chat_outlined,
-                    label: 'WhatsApp',
+                    label: t(context, 'common.whatsapp'),
                     value: profile.whatsapp!,
+                    kind: ContactKind.whatsapp,
                   ),
                 if (profile.email.isEmpty &&
                     (profile.phone == null || profile.phone!.isEmpty) &&
                     (profile.whatsapp == null || profile.whatsapp!.isEmpty))
                   Text(
-                    'No contact details yet',
+                    t(context, 'profile.contactEmpty'),
                     style: KaziTextStyles.subtitle.copyWith(fontSize: 14),
                   ),
-                if (InquiryStore.instance.accepted.isNotEmpty) ...[
+                if (InquiryStore.instance.acceptedForViewer.isNotEmpty) ...[
                   const SizedBox(height: 32),
-                  Text('Accepted clients', style: KaziTextStyles.label),
+                  Text(t(context, 'profile.acceptedClients'), style: KaziTextStyles.label),
                   const SizedBox(height: 12),
-                  ...InquiryStore.instance.accepted.map(
+                  ...InquiryStore.instance.acceptedForViewer.map(
                     (inquiry) => _AcceptedClientTile(inquiry: inquiry),
                   ),
                 ],
                 if (profile.portfolioPhotoPaths.isNotEmpty) ...[
                   const SizedBox(height: 32),
-                  Text('Past jobs', style: KaziTextStyles.label),
+                  Text(t(context, 'inquiry.pastJobs'), style: KaziTextStyles.label),
                   const SizedBox(height: 12),
                   GridView.builder(
                     shrinkWrap: true,
@@ -268,20 +275,23 @@ class _AcceptedClientTile extends StatelessWidget {
           if (inquiry.customerEmail.isNotEmpty)
             _ContactRow(
               icon: Icons.email_outlined,
-              label: 'Email',
+              label: t(context, 'common.email'),
               value: inquiry.customerEmail,
+              kind: ContactKind.email,
             ),
           if (inquiry.customerPhone.isNotEmpty)
             _ContactRow(
               icon: Icons.phone_outlined,
-              label: 'Phone',
+              label: t(context, 'common.phone'),
               value: inquiry.customerPhone,
+              kind: ContactKind.phone,
             ),
           if (inquiry.customerWhatsapp.isNotEmpty)
             _ContactRow(
               icon: Icons.chat_outlined,
-              label: 'WhatsApp',
+              label: t(context, 'common.whatsapp'),
               value: inquiry.customerWhatsapp,
+              kind: ContactKind.whatsapp,
             ),
         ],
       ),
@@ -340,33 +350,39 @@ class _ContactRow extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    required this.kind,
   });
 
   final IconData icon;
   final String label;
   final String value;
+  final ContactKind kind;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Icon(icon, color: KaziColors.primary, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: KaziTextStyles.subtitle.copyWith(fontSize: 13),
-                ),
-                Text(value, style: KaziTextStyles.input),
-              ],
+      child: GestureDetector(
+        onTap: () => openContact(context, kind: kind, value: value),
+        child: Row(
+          children: [
+            Icon(icon, color: KaziColors.primary, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: KaziTextStyles.subtitle.copyWith(fontSize: 13),
+                  ),
+                  Text(value, style: KaziTextStyles.input),
+                ],
+              ),
             ),
-          ),
-        ],
+            const Icon(Icons.chevron_right_rounded, color: KaziColors.grey),
+          ],
+        ),
       ),
     );
   }

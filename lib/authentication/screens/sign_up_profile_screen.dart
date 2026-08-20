@@ -6,6 +6,7 @@ import 'package:kazi/authentication/widgets/role_selector.dart';
 import 'package:kazi/app_shell/customer_app_shell.dart';
 import 'package:kazi/app_shell/worker_app_shell.dart';
 import 'package:kazi/authentication/services/local_account_store.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/profile/services/customer_profile_store.dart';
 import 'package:kazi/profile/services/worker_profile_store.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
@@ -51,8 +52,8 @@ class _SignUpProfileScreenState extends State<SignUpProfileScreen> {
         _townController.text.trim().isEmpty ||
         _countryController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill in all fields'),
+        SnackBar(
+          content: Text(t(context, 'auth.fillAll')),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -62,8 +63,8 @@ class _SignUpProfileScreenState extends State<SignUpProfileScreen> {
     final age = int.tryParse(_ageController.text.trim());
     if (age == null || age < 16 || age > 100) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid age (16–100)'),
+        SnackBar(
+          content: Text(t(context, 'auth.validAge')),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -72,8 +73,8 @@ class _SignUpProfileScreenState extends State<SignUpProfileScreen> {
 
     if (_selectedRole == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select Worker or Customer'),
+        SnackBar(
+          content: Text(t(context, 'auth.selectRole')),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -87,10 +88,6 @@ class _SignUpProfileScreenState extends State<SignUpProfileScreen> {
     if (!_validateForm()) return;
 
     setState(() => _isLoading = true);
-    await Future<void>.delayed(const Duration(milliseconds: 800));
-
-    if (!mounted) return;
-    setState(() => _isLoading = false);
 
     final data = widget.signUpData.copyWith(
       firstName: _firstNameController.text.trim(),
@@ -101,7 +98,6 @@ class _SignUpProfileScreenState extends State<SignUpProfileScreen> {
       role: _selectedRole,
     );
 
-    // TODO(backend): POST /auth/register with data
     if (data.role == UserRole.worker) {
       WorkerProfileStore.instance.initFromSignUp(data);
     } else {
@@ -110,10 +106,11 @@ class _SignUpProfileScreenState extends State<SignUpProfileScreen> {
 
     final created = await LocalAccountStore.instance.register(data);
     if (!mounted) return;
+    setState(() => _isLoading = false);
     if (!created) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('An account with these details already exists.'),
+        SnackBar(
+          content: Text(t(context, 'auth.couldNotCreate')),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -166,10 +163,10 @@ class _SignUpProfileScreenState extends State<SignUpProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text('Tell us about you', style: KaziTextStyles.heading),
+                      Text(t(context, 'auth.tellUs'), style: KaziTextStyles.heading),
                       const SizedBox(height: 12),
                       Text(
-                        'This helps us connect you with the right work.',
+                        t(context, 'auth.tellUsSub'),
                         style: KaziTextStyles.subtitle.copyWith(
                           color: KaziColors.textPrimary,
                         ),
@@ -177,37 +174,37 @@ class _SignUpProfileScreenState extends State<SignUpProfileScreen> {
                       const SizedBox(height: 28),
                       KaziTextField(
                         controller: _firstNameController,
-                        label: 'Name',
-                        hint: 'First name',
+                        label: t(context, 'common.name'),
+                        hint: t(context, 'common.firstName'),
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 20),
                       KaziTextField(
                         controller: _lastNameController,
-                        label: 'Surname',
-                        hint: 'Last name',
+                        label: t(context, 'common.surname'),
+                        hint: t(context, 'common.lastName'),
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 20),
                       KaziTextField(
                         controller: _ageController,
-                        label: 'Age',
-                        hint: 'e.g. 25',
+                        label: t(context, 'common.age'),
+                        hint: t(context, 'hint.age'),
                         keyboardType: TextInputType.number,
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 20),
                       KaziTextField(
                         controller: _townController,
-                        label: 'Town',
-                        hint: 'e.g. Windhoek',
+                        label: t(context, 'common.town'),
+                        hint: t(context, 'hint.town'),
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 20),
                       KaziTextField(
                         controller: _countryController,
-                        label: 'Country',
-                        hint: 'e.g. Namibia',
+                        label: t(context, 'common.country'),
+                        hint: t(context, 'hint.country'),
                         textInputAction: TextInputAction.done,
                       ),
                       const SizedBox(height: 28),
@@ -225,7 +222,7 @@ class _SignUpProfileScreenState extends State<SignUpProfileScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                 child: KaziButton(
-                  label: 'Create account',
+                  label: t(context, 'auth.createAccountButton'),
                   isLoading: _isLoading,
                   onPressed: _completeSignUp,
                 ),

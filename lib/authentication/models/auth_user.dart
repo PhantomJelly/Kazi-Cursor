@@ -6,6 +6,8 @@ class AuthUser {
     this.displayName,
     this.photoUrl,
     this.isMock = false,
+    this.idToken,
+    this.accessToken,
   });
 
   final String id;
@@ -13,13 +15,6 @@ class AuthUser {
   final String? displayName;
   final String? photoUrl;
   final bool isMock;
-
-  factory AuthUser.mock() {
-    return const AuthUser(
-      id: 'mock-google-user',
-      email: 'demo.user@gmail.com',
-      displayName: 'Demo User',
-      isMock: true,
-    );
-  }
+  final String? idToken;
+  final String? accessToken;
 }

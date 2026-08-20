@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:kazi/profile/models/worker_profile.dart';
 import 'package:kazi/profile/services/worker_profile_store.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
+import 'package:kazi/shared/utils/photo_picker.dart';
 import 'package:kazi/shared/utils/platform_image.dart' as platform_image;
 import 'package:kazi/shared/widgets/kazi_button.dart';
+import 'package:kazi/supabase/media_storage.dart';
 
 class WorkerPortfolioScreen extends StatefulWidget {
   const WorkerPortfolioScreen({super.key});
@@ -17,8 +19,8 @@ class WorkerPortfolioScreen extends StatefulWidget {
 
 class _WorkerPortfolioScreenState extends State<WorkerPortfolioScreen> {
   final _bioController = TextEditingController();
-  final _picker = ImagePicker();
   List<String> _photoPaths = [];
+  bool _isUploading = false;
 
   int get _wordCount => _bioController.text
       .trim()
@@ -44,13 +46,18 @@ class _WorkerPortfolioScreenState extends State<WorkerPortfolioScreen> {
   }
 
   Future<void> _addPhotos() async {
-    final files = await _picker.pickMultiImage(
-      maxWidth: 1200,
-      imageQuality: 85,
+    if (_isUploading) return;
+    setState(() => _isUploading = true);
+    final urls = await PhotoPicker.pickManyAndUpload(
+      context,
+      bucket: MediaStorage.portfolio,
     );
-    if (files.isEmpty) return;
+    if (!mounted) return;
     setState(() {
-      _photoPaths = [..._photoPaths, ...files.map((f) => f.path)];
+      _isUploading = false;
+      if (urls.isNotEmpty) {
+        _photoPaths = [..._photoPaths, ...urls];
+      }
     });
   }
 
@@ -58,16 +65,16 @@ class _WorkerPortfolioScreenState extends State<WorkerPortfolioScreen> {
     setState(() => _photoPaths.removeAt(index));
   }
 
-  void _persist() {
-    WorkerProfileStore.instance.updatePortfolio(
+  Future<void> _persist() async {
+    await WorkerProfileStore.instance.updatePortfolio(
       bio: _bioController.text.trim(),
       portfolioPhotoPaths: _photoPaths,
     );
   }
 
-  void _save() {
-    _persist();
-    Navigator.of(context).pop();
+  Future<void> _save() async {
+    await _persist();
+    if (mounted) Navigator.of(context).pop();
   }
 
   @override
@@ -79,10 +86,10 @@ class _WorkerPortfolioScreenState extends State<WorkerPortfolioScreen> {
       ),
       child: PopScope(
         canPop: false,
-        onPopInvokedWithResult: (didPop, _) {
+        onPopInvokedWithResult: (didPop, _) async {
           if (didPop) return;
-          _persist();
-          Navigator.of(context).pop();
+          await _persist();
+          if (context.mounted) Navigator.of(context).pop();
         },
         child: Scaffold(
         backgroundColor: KaziColors.white,
@@ -92,9 +99,9 @@ class _WorkerPortfolioScreenState extends State<WorkerPortfolioScreen> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded,
                 color: KaziColors.primary, size: 20),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(context).maybePop(),
           ),
-          title: Text('Work portfolio', style: KaziTextStyles.button),
+          title: Text(t(context, 'profile.portfolio'), style: KaziTextStyles.button),
         ),
         body: SafeArea(
           child: Column(
@@ -105,10 +112,12 @@ class _WorkerPortfolioScreenState extends State<WorkerPortfolioScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text('Bio', style: KaziTextStyles.label),
+                      Text(t(context, 'profile.bio'), style: KaziTextStyles.label),
                       const SizedBox(height: 8),
                       Text(
-                        'Describe the type of work you do (minimum ${WorkerProfile.bioMinWords} words).',
+                        t(context, 'profile.bioHint', {
+                          'min': '${WorkerProfile.bioMinWords}',
+                        }),
                         style: KaziTextStyles.subtitle.copyWith(
                           fontSize: 13,
                           color: KaziColors.textPrimary,
@@ -120,8 +129,7 @@ class _WorkerPortfolioScreenState extends State<WorkerPortfolioScreen> {
                         maxLines: 8,
                         style: KaziTextStyles.input,
                         decoration: InputDecoration(
-                          hintText:
-                              'e.g. I am an experienced plumber specialising in residential repairs...',
+                          hintText: t(context, 'profile.bioExample'),
                           hintStyle: KaziTextStyles.input
                               .copyWith(color: KaziColors.textHint),
                           filled: true,
@@ -152,7 +160,10 @@ class _WorkerPortfolioScreenState extends State<WorkerPortfolioScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        '$_wordCount / ${WorkerProfile.bioMinWords} words minimum',
+                        t(context, 'profile.wordCount', {
+                          'count': '$_wordCount',
+                          'min': '${WorkerProfile.bioMinWords}',
+                        }),
                         style: KaziTextStyles.subtitle.copyWith(
                           fontSize: 13,
                           color: _wordCount >= WorkerProfile.bioMinWords
@@ -164,9 +175,9 @@ class _WorkerPortfolioScreenState extends State<WorkerPortfolioScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Job photos', style: KaziTextStyles.label),
+                          Text(t(context, 'profile.jobPhotos'), style: KaziTextStyles.label),
                           Text(
-                            'Optional · recommended',
+                            t(context, 'profile.optional'),
                             style: KaziTextStyles.subtitle.copyWith(
                               fontSize: 13,
                             ),
@@ -193,7 +204,9 @@ class _WorkerPortfolioScreenState extends State<WorkerPortfolioScreen> {
                                   color: KaziColors.grey),
                               const SizedBox(width: 8),
                               Text(
-                                'Add photos from past jobs',
+                                _isUploading
+                                    ? t(context, 'profile.uploading')
+                                    : t(context, 'profile.takeOrChoose'),
                                 style: KaziTextStyles.subtitle
                                     .copyWith(fontSize: 14),
                               ),
@@ -256,7 +269,7 @@ class _WorkerPortfolioScreenState extends State<WorkerPortfolioScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                child: KaziButton(label: 'Save', onPressed: _save),
+                child: KaziButton(label: t(context, 'common.save'), onPressed: _save),
               ),
             ],
           ),

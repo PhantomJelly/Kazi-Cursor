@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
 
@@ -24,7 +25,7 @@ class CertifiedBadge extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Text(
-            'Certified',
+            t(context, 'common.certified'),
             style: KaziTextStyles.button.copyWith(
               fontSize: 13,
               color: KaziColors.primary,

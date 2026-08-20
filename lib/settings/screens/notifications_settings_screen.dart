@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:kazi/notifications/kazi_notifications.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/settings/services/settings_store.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
@@ -47,41 +49,28 @@ class _NotificationsSettingsScreenState
                 color: KaziColors.primary, size: 20),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          title: Text('Notifications', style: KaziTextStyles.button),
+          title: Text(t(context, 'notify.title'), style: KaziTextStyles.button),
         ),
         body: ListView(
           padding: const EdgeInsets.all(24),
           children: [
             Text(
-              'Choose what you want to hear about.',
+              t(context, 'notify.intro'),
               style: KaziTextStyles.subtitle.copyWith(
                 color: KaziColors.textPrimary,
               ),
             ),
             const SizedBox(height: 24),
             _NotificationSwitch(
-              title: 'Job updates',
-              subtitle: 'Inquiries, accepts and rejects',
+              title: t(context, 'notify.jobs'),
+              subtitle: t(context, 'notify.jobsSub'),
               value: settings.jobUpdates,
-              onChanged: settings.setJobUpdates,
-            ),
-            _NotificationSwitch(
-              title: 'Messages',
-              subtitle: 'When someone contacts you',
-              value: settings.messages,
-              onChanged: settings.setMessages,
-            ),
-            _NotificationSwitch(
-              title: 'Reminders',
-              subtitle: 'Upcoming visits and follow-ups',
-              value: settings.reminders,
-              onChanged: settings.setReminders,
-            ),
-            _NotificationSwitch(
-              title: 'Tips and offers',
-              subtitle: 'Occasional news from Kazi',
-              value: settings.marketing,
-              onChanged: settings.setMarketing,
+              onChanged: (value) async {
+                await settings.setJobUpdates(value);
+                if (value) {
+                  await KaziNotifications.instance.requestPermission();
+                }
+              },
             ),
           ],
         ),

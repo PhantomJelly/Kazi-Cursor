@@ -1,11 +1,11 @@
 {
-    "name": "kazi",
-    "short_name": "kazi",
+    "name": "Kazi",
+    "short_name": "Kazi",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#03263A",
+    "theme_color": "#03263A",
+    "description": "Kazi — work made simple. A marketplace for Namibia connecting trade workers and customers.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

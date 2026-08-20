@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:kazi/authentication/screens/forgot_password_screen.dart';
 import 'package:kazi/authentication/services/auth_navigation.dart';
 import 'package:kazi/authentication/services/local_account_store.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
 import 'package:kazi/shared/widgets/kazi_button.dart';
 import 'package:kazi/shared/widgets/kazi_text_field.dart';
@@ -19,6 +21,7 @@ class _EmailSignInScreenState extends State<EmailSignInScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  String? _passwordError;
 
   @override
   void dispose() {
@@ -33,21 +36,30 @@ class _EmailSignInScreenState extends State<EmailSignInScreen> {
 
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Enter your email and password'),
+        SnackBar(
+          content: Text(t(context, 'auth.enterEmailPassword')),
           behavior: SnackBarBehavior.floating,
         ),
       );
       return;
     }
 
-    setState(() => _isLoading = true);
-    final account = await LocalAccountStore.instance.signInOrCreateDummy(
+    setState(() {
+      _isLoading = true;
+      _passwordError = null;
+    });
+    final account = await LocalAccountStore.instance.signInWithEmail(
       email: email,
       password: password,
     );
     if (!mounted) return;
     setState(() => _isLoading = false);
+
+    if (account == null) {
+      setState(() => _passwordError = t(context, 'auth.incorrectPassword'));
+      return;
+    }
+
     openAccountHome(context, account);
   }
 
@@ -76,10 +88,10 @@ class _EmailSignInScreenState extends State<EmailSignInScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Sign in with Email', style: KaziTextStyles.heading),
+                Text(t(context, 'auth.signInEmail'), style: KaziTextStyles.heading),
                 const SizedBox(height: 12),
                 Text(
-                  'Enter your email and password to continue.',
+                  t(context, 'auth.signInSubtitle'),
                   style: KaziTextStyles.subtitle.copyWith(
                     color: KaziColors.textPrimary,
                   ),
@@ -87,18 +99,24 @@ class _EmailSignInScreenState extends State<EmailSignInScreen> {
                 const SizedBox(height: 32),
                 KaziTextField(
                   controller: _emailController,
-                  label: 'Email',
-                  hint: 'you@example.com',
+                  label: t(context, 'common.email'),
+                  hint: t(context, 'hint.email'),
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
                 ),
                 const SizedBox(height: 20),
                 KaziTextField(
                   controller: _passwordController,
-                  label: 'Password',
-                  hint: 'Enter your password',
+                  label: t(context, 'common.password'),
+                  hint: t(context, 'auth.passwordHint'),
                   obscureText: _obscurePassword,
                   textInputAction: TextInputAction.done,
+                  errorText: _passwordError,
+                  onChanged: (_) {
+                    if (_passwordError != null) {
+                      setState(() => _passwordError = null);
+                    }
+                  },
                   suffix: IconButton(
                     icon: Icon(
                       _obscurePassword
@@ -117,17 +135,21 @@ class _EmailSignInScreenState extends State<EmailSignInScreen> {
                   alignment: Alignment.centerRight,
                   child: GestureDetector(
                     onTap: () {
-                      // TODO: forgot password
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const ForgotPasswordScreen(),
+                        ),
+                      );
                     },
                     child: Text(
-                      'Forgot password?',
+                      t(context, 'auth.forgotPassword'),
                       style: KaziTextStyles.footerLink,
                     ),
                   ),
                 ),
                 const Spacer(),
                 KaziButton(
-                  label: 'Sign in',
+                  label: t(context, 'auth.signIn'),
                   isLoading: _isLoading,
                   onPressed: _signIn,
                 ),

@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Kazi needs the camera so you can take a profile photo, job photo, or face scan.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Kazi needs photo access so you can choose a profile photo, job photo, or ID document.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

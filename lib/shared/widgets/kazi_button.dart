@@ -23,6 +23,7 @@ class KaziButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPrimary = variant == KaziButtonVariant.primary;
+    final isDisabled = onPressed == null && !isLoading;
 
     return SizedBox(
       width: double.infinity,
@@ -35,8 +36,9 @@ class KaziButton extends StatelessWidget {
               isPrimary ? KaziColors.primary : KaziColors.white,
           foregroundColor:
               isPrimary ? KaziColors.onPrimary : KaziColors.textPrimary,
-          disabledBackgroundColor:
-              isPrimary ? KaziColors.primary : KaziColors.white,
+          disabledBackgroundColor: isPrimary
+              ? (isLoading ? KaziColors.primary : KaziColors.grey15)
+              : KaziColors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
             side: isPrimary
@@ -65,9 +67,11 @@ class KaziButton extends StatelessWidget {
                   Text(
                     label,
                     style: KaziTextStyles.button.copyWith(
-                      color: isPrimary
+                      color: isDisabled
                           ? KaziColors.grey
-                          : KaziColors.textPrimary,
+                          : isPrimary
+                              ? KaziColors.grey
+                              : KaziColors.textPrimary,
                     ),
                   ),
                 ],

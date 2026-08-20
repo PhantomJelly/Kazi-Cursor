@@ -3,31 +3,38 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:kazi/authentication/models/auth_user.dart';
 import 'package:kazi/authentication/services/auth_config.dart';
 
+class GoogleNotConfiguredException implements Exception {
+  @override
+  String toString() => 'Google sign-in is not configured yet.';
+}
+
 class GoogleAuthService {
   GoogleSignIn? get _googleSignIn {
     if (!AuthConfig.isGoogleConfigured) return null;
 
     return GoogleSignIn(
       clientId: kIsWeb ? AuthConfig.googleWebClientId : null,
+      serverClientId: AuthConfig.googleWebClientId,
       scopes: ['email', 'profile'],
     );
   }
 
-  /// Signs in with Google when configured, otherwise returns a demo user.
   Future<AuthUser?> signIn() async {
-    if (!AuthConfig.isGoogleConfigured) {
-      await Future<void>.delayed(const Duration(milliseconds: 700));
-      return AuthUser.mock();
+    if (!AuthConfig.isGoogleConfigured || _googleSignIn == null) {
+      throw GoogleNotConfiguredException();
     }
 
     final account = await _googleSignIn!.signIn();
     if (account == null) return null;
 
+    final auth = await account.authentication;
     return AuthUser(
       id: account.id,
       email: account.email,
       displayName: account.displayName,
       photoUrl: account.photoUrl,
+      idToken: auth.idToken,
+      accessToken: auth.accessToken,
     );
   }
 

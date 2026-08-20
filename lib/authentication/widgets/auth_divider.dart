@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
 
 class AuthDivider extends StatelessWidget {
-  const AuthDivider({super.key, this.label = 'or'});
+  const AuthDivider({super.key, this.label});
 
-  final String label;
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +16,7 @@ class AuthDivider extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            label,
+            label ?? t(context, 'common.or'),
             style: KaziTextStyles.subtitle.copyWith(fontSize: 14),
           ),
         ),

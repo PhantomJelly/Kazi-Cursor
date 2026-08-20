@@ -31,7 +31,7 @@ class WorkerProfileStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateGeneralInfo({
+  Future<void> updateGeneralInfo({
     required String firstName,
     required String lastName,
     required int age,
@@ -40,7 +40,7 @@ class WorkerProfileStore extends ChangeNotifier {
     required String email,
     String? phone,
     String? whatsapp,
-  }) {
+  }) async {
     if (_profile == null) return;
     _profile = _profile!.copyWith(
       firstName: firstName,
@@ -52,55 +52,56 @@ class WorkerProfileStore extends ChangeNotifier {
       phone: phone,
       whatsapp: whatsapp,
     );
-    _save();
+    notifyListeners();
+    await LocalAccountStore.instance.persistCurrent();
   }
 
-  void updateWorkHistory({
+  Future<void> updateWorkHistory({
     required List<TradeCategory> specializations,
     WorkExperienceLevel? experience,
     String? profilePhotoPath,
-  }) {
+  }) async {
     if (_profile == null) return;
     _profile = _profile!.copyWith(
       specializations: specializations,
       experience: experience ?? _profile!.experience,
       profilePhotoPath: profilePhotoPath ?? _profile!.profilePhotoPath,
     );
-    _save();
+    await _save();
   }
 
-  void updatePortfolio({
+  Future<void> updatePortfolio({
     required String bio,
     required List<String> portfolioPhotoPaths,
-  }) {
+  }) async {
     if (_profile == null) return;
     _profile = _profile!.copyWith(
       bio: bio,
       portfolioPhotoPaths: portfolioPhotoPaths,
     );
-    _save();
+    await _save();
   }
 
-  void updateCertifications(List<WorkerCertification> certifications) {
+  Future<void> updateCertifications(List<WorkerCertification> certifications) async {
     if (_profile == null) return;
     _profile = _profile!.copyWith(certifications: certifications);
-    _save();
+    await _save();
   }
 
-  void updateVerification({
+  Future<void> updateVerification({
     String? idDocumentPath,
     String? faceScanPath,
-  }) {
+  }) async {
     if (_profile == null) return;
     _profile = _profile!.copyWith(
       idDocumentPath: idDocumentPath ?? _profile!.idDocumentPath,
       faceScanPath: faceScanPath ?? _profile!.faceScanPath,
     );
-    _save();
+    await _save();
   }
 
-  void _save() {
+  Future<void> _save() async {
     notifyListeners();
-    LocalAccountStore.instance.persistCurrent();
+    await LocalAccountStore.instance.persistCurrent();
   }
 }

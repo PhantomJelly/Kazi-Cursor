@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kazi/core_workflow/models/job_inquiry.dart';
 import 'package:kazi/core_workflow/services/inquiry_store.dart';
+import 'package:kazi/core_workflow/widgets/inquiry_calendar.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
+import 'package:kazi/shared/utils/contact_actions.dart';
 import 'package:kazi/shared/widgets/kazi_button.dart';
 
 class WorkerJobDetailScreen extends StatelessWidget {
@@ -28,67 +31,87 @@ class WorkerJobDetailScreen extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (sheetContext) {
-        return Padding(
-          padding: EdgeInsets.fromLTRB(
-            24,
-            20,
-            24,
-            24 + MediaQuery.viewInsetsOf(sheetContext).bottom,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('Why are you rejecting?', style: KaziTextStyles.button),
-              const SizedBox(height: 8),
-              Text(
-                'The customer will see this explanation.',
-                style: KaziTextStyles.subtitle.copyWith(fontSize: 13),
+        var showError = false;
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                24,
+                20,
+                24,
+                24 + MediaQuery.viewInsetsOf(sheetContext).bottom,
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: controller,
-                maxLines: 4,
-                style: KaziTextStyles.input,
-                decoration: InputDecoration(
-                  hintText: 'e.g. I am booked those days...',
-                  hintStyle: KaziTextStyles.input.copyWith(
-                    color: KaziColors.textHint,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(t(context, 'jobs.rejectWhy'), style: KaziTextStyles.button),
+                  const SizedBox(height: 8),
+                  Text(
+                    t(context, 'jobs.rejectHint'),
+                    style: KaziTextStyles.subtitle.copyWith(fontSize: 13),
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(
-                      color: KaziColors.grey15,
-                      width: 1.5,
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: controller,
+                    maxLines: 4,
+                    style: KaziTextStyles.input,
+                    decoration: InputDecoration(
+                      hintText: t(context, 'jobs.rejectHint'),
+                      hintStyle: KaziTextStyles.input.copyWith(
+                        color: KaziColors.textHint,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(
+                          color: KaziColors.grey15,
+                          width: 1.5,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: showError
+                              ? KaziColors.statusPending
+                              : KaziColors.grey15,
+                          width: 1.5,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(
+                          color: KaziColors.primary,
+                          width: 1.5,
+                        ),
+                      ),
                     ),
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(
-                      color: KaziColors.grey15,
-                      width: 1.5,
+                  if (showError) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      t(context, 'jobs.reasonRequired'),
+                      style: KaziTextStyles.subtitle.copyWith(
+                        color: KaziColors.statusPending,
+                        fontSize: 13,
+                      ),
                     ),
+                  ],
+                  const SizedBox(height: 16),
+                  KaziButton(
+                    label: t(context, 'jobs.sendRejection'),
+                    onPressed: () {
+                      final text = controller.text.trim();
+                      if (text.isEmpty) {
+                        setSheetState(() => showError = true);
+                        return;
+                      }
+                      Navigator.of(sheetContext).pop(text);
+                    },
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(
-                      color: KaziColors.primary,
-                      width: 1.5,
-                    ),
-                  ),
-                ),
+                ],
               ),
-              const SizedBox(height: 16),
-              KaziButton(
-                label: 'Send rejection',
-                onPressed: () {
-                  final text = controller.text.trim();
-                  if (text.isEmpty) return;
-                  Navigator.of(sheetContext).pop(text);
-                },
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -105,8 +128,8 @@ class WorkerJobDetailScreen extends StatelessWidget {
       builder: (context, _) {
         final inquiry = _inquiry;
         if (inquiry == null) {
-          return const Scaffold(
-            body: Center(child: Text('Inquiry not found')),
+          return Scaffold(
+            body: Center(child: Text(t(context, 'jobs.notFound'))),
           );
         }
 
@@ -125,7 +148,7 @@ class WorkerJobDetailScreen extends StatelessWidget {
                     color: KaziColors.primary, size: 20),
                 onPressed: () => Navigator.of(context).pop(),
               ),
-              title: Text('Job inquiry', style: KaziTextStyles.button),
+              title: Text(t(context, 'jobs.detailTitle'), style: KaziTextStyles.button),
             ),
             body: SafeArea(
               child: Column(
@@ -148,7 +171,7 @@ class WorkerJobDetailScreen extends StatelessWidget {
                               ),
                               if (inquiry.isUrgent)
                                 Text(
-                                  'URGENT',
+                                  t(context, 'common.urgent'),
                                   style: KaziTextStyles.button.copyWith(
                                     color: KaziColors.urgent,
                                     fontSize: 12,
@@ -158,50 +181,64 @@ class WorkerJobDetailScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Status: ${inquiry.status.label}',
+                            inquiry.status.label,
                             style: KaziTextStyles.button.copyWith(
                               color: inquiry.status.color,
                             ),
                           ),
-                          const SizedBox(height: 20),
-                          _Detail(label: 'Customer', value: inquiry.customerName),
-                          _Detail(
-                            label: 'Location',
-                            value: inquiry.customerLocation,
+                          const SizedBox(height: 24),
+                          Text(
+                            inquiry.customerName,
+                            style: KaziTextStyles.heading,
                           ),
-                          _Detail(
-                            label: 'Description',
-                            value: inquiry.description,
+                          const SizedBox(height: 6),
+                          Text(
+                            inquiry.customerLocation,
+                            style: KaziTextStyles.subtitle.copyWith(
+                              color: KaziColors.textPrimary,
+                            ),
                           ),
-                          _Detail(
-                            label: 'Occurred on',
-                            value: formatInquiryDate(inquiry.occurredOn),
+                          const SizedBox(height: 28),
+                          Text(
+                            t(context, 'jobs.details'),
+                            style: KaziTextStyles.label,
                           ),
-                          _Detail(label: 'Timing', value: inquiry.timing.label),
-                          _Detail(
-                            label: 'Days free',
-                            value: inquiry.freeDays
-                                .map(formatInquiryDate)
-                                .join(', '),
+                          const SizedBox(height: 8),
+                          Text(inquiry.description, style: KaziTextStyles.input),
+                          const SizedBox(height: 24),
+                          InquiryCalendar(
+                            occurredOn: inquiry.occurredOn,
+                            availableDays: inquiry.freeDays.toSet(),
                           ),
                           if (inquiry.status == InquiryStatus.rejected &&
-                              inquiry.rejectionReason != null)
+                              inquiry.rejectionReason != null) ...[
+                            const SizedBox(height: 24),
                             _Detail(
-                              label: 'Rejection reason',
+                              label: t(context, 'jobs.rejectionReason'),
                               value: inquiry.rejectionReason!,
                             ),
+                          ],
                           if (inquiry.status == InquiryStatus.accepted) ...[
                             const SizedBox(height: 8),
-                            Text('Customer contact', style: KaziTextStyles.label),
+                            Text(t(context, 'jobs.customerContact'), style: KaziTextStyles.label),
                             const SizedBox(height: 8),
                             if (inquiry.customerEmail.isNotEmpty)
-                              _Detail(label: 'Email', value: inquiry.customerEmail),
+                              _Detail(
+                                label: t(context, 'common.email'),
+                                value: inquiry.customerEmail,
+                                kind: ContactKind.email,
+                              ),
                             if (inquiry.customerPhone.isNotEmpty)
-                              _Detail(label: 'Phone', value: inquiry.customerPhone),
+                              _Detail(
+                                label: t(context, 'common.phone'),
+                                value: inquiry.customerPhone,
+                                kind: ContactKind.phone,
+                              ),
                             if (inquiry.customerWhatsapp.isNotEmpty)
                               _Detail(
-                                label: 'WhatsApp',
+                                label: t(context, 'common.whatsapp'),
                                 value: inquiry.customerWhatsapp,
+                                kind: ContactKind.whatsapp,
                               ),
                           ],
                         ],
@@ -214,13 +251,22 @@ class WorkerJobDetailScreen extends StatelessWidget {
                       child: Column(
                         children: [
                           KaziButton(
-                            label: 'Accept inquiry',
-                            onPressed: () =>
-                                InquiryStore.instance.accept(inquiry.id),
+                            label: t(context, 'jobs.accept'),
+                            onPressed: () async {
+                              await InquiryStore.instance.accept(inquiry.id);
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(t(context, 'jobs.acceptedSnack')),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                              Navigator.of(context).pop();
+                            },
                           ),
                           const SizedBox(height: 12),
                           KaziButton(
-                            label: 'Reject inquiry',
+                            label: t(context, 'jobs.reject'),
                             variant: KaziButtonVariant.outline,
                             onPressed: () => _reject(context, inquiry),
                           ),
@@ -238,23 +284,30 @@ class WorkerJobDetailScreen extends StatelessWidget {
 }
 
 class _Detail extends StatelessWidget {
-  const _Detail({required this.label, required this.value});
+  const _Detail({required this.label, required this.value, this.kind});
 
   final String label;
   final String value;
+  final ContactKind? kind;
 
   @override
   Widget build(BuildContext context) {
+    final body = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: KaziTextStyles.label),
+        const SizedBox(height: 4),
+        Text(value, style: KaziTextStyles.input),
+      ],
+    );
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: KaziTextStyles.label),
-          const SizedBox(height: 4),
-          Text(value, style: KaziTextStyles.input),
-        ],
-      ),
+      child: kind == null
+          ? body
+          : GestureDetector(
+              onTap: () => openContact(context, kind: kind!, value: value),
+              child: body,
+            ),
     );
   }
 }

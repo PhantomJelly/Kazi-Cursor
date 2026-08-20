@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/shared/constants/trade_categories.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
@@ -32,16 +33,19 @@ class SpecializationSelector extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Specialisation', style: KaziTextStyles.label),
+            Text(t(context, 'profile.specialisation'), style: KaziTextStyles.label),
             Text(
-              '${selected.length}/$maxSelection selected',
+              t(context, 'profile.selectedCount', {
+                'count': '${selected.length}',
+                'max': '$maxSelection',
+              }),
               style: KaziTextStyles.subtitle.copyWith(fontSize: 13),
             ),
           ],
         ),
         const SizedBox(height: 6),
         Text(
-          'Choose at least 1 and up to 3 trades.',
+          t(context, 'profile.chooseTrades'),
           style: KaziTextStyles.subtitle.copyWith(
             fontSize: 13,
             color: KaziColors.textPrimary,

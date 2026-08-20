@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kazi/authentication/screens/sign_in_screen.dart';
+import 'package:kazi/authentication/services/google_auth_service.dart';
 import 'package:kazi/authentication/services/local_account_store.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
 import 'package:kazi/shared/widgets/kazi_button.dart';
@@ -10,6 +12,7 @@ class LogoutConfirmScreen extends StatelessWidget {
   const LogoutConfirmScreen({super.key});
 
   Future<void> _confirm(BuildContext context) async {
+    await GoogleAuthService().signOut();
     await LocalAccountStore.instance.signOut();
     if (!context.mounted) return;
     Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
@@ -42,22 +45,22 @@ class LogoutConfirmScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Log out?', style: KaziTextStyles.heading),
+                Text(t(context, 'settings.logoutTitle'), style: KaziTextStyles.heading),
                 const SizedBox(height: 12),
                 Text(
-                  'You will go back to the welcome screen. You can sign in again any time.',
+                  t(context, 'settings.logoutBody'),
                   style: KaziTextStyles.subtitle.copyWith(
                     color: KaziColors.textPrimary,
                   ),
                 ),
                 const Spacer(),
                 KaziButton(
-                  label: 'Log out',
+                  label: t(context, 'settings.logout'),
                   onPressed: () => _confirm(context),
                 ),
                 const SizedBox(height: 12),
                 KaziButton(
-                  label: 'Cancel',
+                  label: t(context, 'common.cancel'),
                   variant: KaziButtonVariant.outline,
                   onPressed: () => Navigator.of(context).pop(),
                 ),

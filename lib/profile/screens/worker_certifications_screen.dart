@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:kazi/profile/models/worker_certification.dart';
 import 'package:kazi/profile/services/worker_profile_store.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
+import 'package:kazi/shared/utils/photo_picker.dart';
 import 'package:kazi/shared/widgets/kazi_button.dart';
 import 'package:kazi/shared/widgets/kazi_text_field.dart';
+import 'package:kazi/supabase/media_storage.dart';
 
 class WorkerCertificationsScreen extends StatefulWidget {
   const WorkerCertificationsScreen({super.key});
@@ -19,9 +21,9 @@ class WorkerCertificationsScreen extends StatefulWidget {
 class _WorkerCertificationsScreenState extends State<WorkerCertificationsScreen> {
   final _titleController = TextEditingController();
   final _issuerController = TextEditingController();
-  final _picker = ImagePicker();
   List<WorkerCertification> _certifications = [];
   String? _pendingDocumentPath;
+  bool _isUploading = false;
 
   @override
   void initState() {
@@ -40,12 +42,17 @@ class _WorkerCertificationsScreenState extends State<WorkerCertificationsScreen>
   }
 
   Future<void> _pickDocument() async {
-    final file = await _picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1200,
-      imageQuality: 85,
+    if (_isUploading) return;
+    setState(() => _isUploading = true);
+    final url = await PhotoPicker.pickAndUpload(
+      context,
+      bucket: MediaStorage.certificates,
     );
-    if (file != null) setState(() => _pendingDocumentPath = file.path);
+    if (!mounted) return;
+    setState(() {
+      _isUploading = false;
+      if (url != null) _pendingDocumentPath = url;
+    });
   }
 
   void _addCertification() {
@@ -53,8 +60,8 @@ class _WorkerCertificationsScreenState extends State<WorkerCertificationsScreen>
     final issuer = _issuerController.text.trim();
     if (title.isEmpty || issuer.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Enter certification title and issuer'),
+        SnackBar(
+          content: Text(t(context, 'profile.enterCert')),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -62,8 +69,8 @@ class _WorkerCertificationsScreenState extends State<WorkerCertificationsScreen>
     }
     if (_pendingDocumentPath == null || _pendingDocumentPath!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please attach your certificate document'),
+        SnackBar(
+          content: Text(t(context, 'profile.attachRequired')),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -89,7 +96,7 @@ class _WorkerCertificationsScreenState extends State<WorkerCertificationsScreen>
     setState(() => _certifications.removeAt(index));
   }
 
-  void _persist() {
+  Future<void> _persist() async {
     final title = _titleController.text.trim();
     final issuer = _issuerController.text.trim();
     var certifications = List<WorkerCertification>.of(_certifications);
@@ -106,12 +113,12 @@ class _WorkerCertificationsScreenState extends State<WorkerCertificationsScreen>
         ),
       ];
     }
-    WorkerProfileStore.instance.updateCertifications(certifications);
+    await WorkerProfileStore.instance.updateCertifications(certifications);
   }
 
-  void _save() {
-    _persist();
-    Navigator.of(context).pop();
+  Future<void> _save() async {
+    await _persist();
+    if (mounted) Navigator.of(context).pop();
   }
 
   @override
@@ -123,10 +130,10 @@ class _WorkerCertificationsScreenState extends State<WorkerCertificationsScreen>
       ),
       child: PopScope(
         canPop: false,
-        onPopInvokedWithResult: (didPop, _) {
+        onPopInvokedWithResult: (didPop, _) async {
           if (didPop) return;
-          _persist();
-          Navigator.of(context).pop();
+          await _persist();
+          if (context.mounted) Navigator.of(context).pop();
         },
         child: Scaffold(
         backgroundColor: KaziColors.white,
@@ -136,9 +143,9 @@ class _WorkerCertificationsScreenState extends State<WorkerCertificationsScreen>
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded,
                 color: KaziColors.primary, size: 20),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(context).maybePop(),
           ),
-          title: Text('Certifications', style: KaziTextStyles.button),
+          title: Text(t(context, 'profile.certifications'), style: KaziTextStyles.button),
         ),
         body: SafeArea(
           child: Column(
@@ -150,19 +157,19 @@ class _WorkerCertificationsScreenState extends State<WorkerCertificationsScreen>
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Add your qualifications',
+                        t(context, 'profile.certsTitle'),
                         style: KaziTextStyles.heading,
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'BONUS section — earn a Certified badge on your profile. A certificate document is required for each entry.',
+                        t(context, 'profile.certsBody'),
                         style: KaziTextStyles.subtitle.copyWith(
                           color: KaziColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 28),
                       if (_certifications.isNotEmpty) ...[
-                        Text('Your certifications', style: KaziTextStyles.label),
+                        Text(t(context, 'profile.yourCerts'), style: KaziTextStyles.label),
                         const SizedBox(height: 12),
                         ..._certifications.asMap().entries.map((entry) {
                           final cert = entry.value;
@@ -210,19 +217,19 @@ class _WorkerCertificationsScreenState extends State<WorkerCertificationsScreen>
                         }),
                         const SizedBox(height: 20),
                       ],
-                      Text('Add certification', style: KaziTextStyles.label),
+                      Text(t(context, 'profile.addCert'), style: KaziTextStyles.label),
                       const SizedBox(height: 12),
                       KaziTextField(
                         controller: _titleController,
-                        label: 'Title',
-                        hint: 'e.g. Plumbing Level 2',
+                        label: t(context, 'common.title'),
+                        hint: t(context, 'profile.certTitleHint'),
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 16),
                       KaziTextField(
                         controller: _issuerController,
-                        label: 'Issuer',
-                        hint: 'e.g. Namibia Training Authority',
+                        label: t(context, 'profile.issuer'),
+                        hint: t(context, 'profile.issuerHint'),
                         textInputAction: TextInputAction.done,
                       ),
                       const SizedBox(height: 16),
@@ -245,9 +252,11 @@ class _WorkerCertificationsScreenState extends State<WorkerCertificationsScreen>
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  _pendingDocumentPath != null
-                                      ? 'Certificate attached'
-                                      : 'Attach certificate (required)',
+                                  _isUploading
+                                      ? t(context, 'profile.uploading')
+                                      : _pendingDocumentPath != null
+                                          ? t(context, 'profile.certAttached')
+                                          : t(context, 'profile.attachCert'),
                                   style: KaziTextStyles.subtitle.copyWith(
                                     fontSize: 14,
                                     color: KaziColors.textPrimary,
@@ -260,7 +269,7 @@ class _WorkerCertificationsScreenState extends State<WorkerCertificationsScreen>
                       ),
                       const SizedBox(height: 16),
                       KaziButton(
-                        label: 'Add to list',
+                        label: t(context, 'profile.addToList'),
                         variant: KaziButtonVariant.outline,
                         onPressed: _addCertification,
                       ),
@@ -270,7 +279,7 @@ class _WorkerCertificationsScreenState extends State<WorkerCertificationsScreen>
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                child: KaziButton(label: 'Save', onPressed: _save),
+                child: KaziButton(label: t(context, 'common.save'), onPressed: _save),
               ),
             ],
           ),

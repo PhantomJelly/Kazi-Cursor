@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:kazi/settings/screens/about_kazi_screen.dart';
 import 'package:kazi/settings/screens/delete_account_confirm_screen.dart';
+import 'package:kazi/settings/screens/help_support_screen.dart';
 import 'package:kazi/settings/screens/language_settings_screen.dart';
 import 'package:kazi/settings/screens/logout_confirm_screen.dart';
 import 'package:kazi/settings/screens/notifications_settings_screen.dart';
 import 'package:kazi/settings/services/settings_store.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/settings/widgets/settings_tile.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
@@ -46,11 +49,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: ListView(
             padding: const EdgeInsets.all(24),
             children: [
-              Text('Settings', style: KaziTextStyles.heading),
+              Text(t(context, 'settings.title'), style: KaziTextStyles.heading),
               const SizedBox(height: 24),
+
+              // App
               SettingsTile(
                 icon: Icons.notifications_outlined,
-                title: 'Notifications',
+                title: t(context, 'common.notifications'),
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute<void>(
@@ -61,7 +66,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               SettingsTile(
                 icon: Icons.language_outlined,
-                title: 'Language',
+                title: t(context, 'common.language'),
                 subtitle: SettingsStore.instance.language.label,
                 onTap: () {
                   Navigator.of(context).push(
@@ -73,18 +78,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               SettingsTile(
                 icon: Icons.help_outline,
-                title: 'Help & support',
-                onTap: () {},
+                title: t(context, 'settings.help'),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const HelpSupportScreen(),
+                    ),
+                  );
+                },
               ),
               SettingsTile(
                 icon: Icons.info_outline,
-                title: 'About Kazi',
-                onTap: () {},
+                title: t(context, 'settings.about'),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const AboutKaziScreen(),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 16),
+
+              // Account
               SettingsTile(
                 icon: Icons.logout_rounded,
-                title: 'Log out',
+                title: t(context, 'settings.logout'),
                 titleColor: KaziColors.primary,
                 onTap: () {
                   Navigator.of(context).push(
@@ -96,7 +115,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               SettingsTile(
                 icon: Icons.delete_outline_rounded,
-                title: 'Delete account',
+                title: t(context, 'settings.delete'),
                 titleColor: KaziColors.statusPending,
                 iconColor: KaziColors.statusPending,
                 onTap: () {

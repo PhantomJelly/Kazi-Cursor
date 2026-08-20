@@ -1,17 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kazi/authentication/screens/sign_in_screen.dart';
+import 'package:kazi/authentication/services/google_auth_service.dart';
 import 'package:kazi/authentication/services/local_account_store.dart';
+import 'package:kazi/core_workflow/services/inquiry_store.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
 import 'package:kazi/shared/widgets/kazi_button.dart';
 
-class DeleteAccountConfirmScreen extends StatelessWidget {
+class DeleteAccountConfirmScreen extends StatefulWidget {
   const DeleteAccountConfirmScreen({super.key});
 
-  Future<void> _confirm(BuildContext context) async {
+  @override
+  State<DeleteAccountConfirmScreen> createState() =>
+      _DeleteAccountConfirmScreenState();
+}
+
+class _DeleteAccountConfirmScreenState
+    extends State<DeleteAccountConfirmScreen> {
+  var _busy = false;
+
+  Future<void> _confirm() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final account = LocalAccountStore.instance.current;
+    await InquiryStore.instance.removeForUser(
+      email: account?.email ?? account?.customerProfile?.email ?? '',
+      phone: account?.phone ?? account?.customerProfile?.phone,
+    );
+    await GoogleAuthService().signOut();
     await LocalAccountStore.instance.deleteCurrentAccount();
-    if (!context.mounted) return;
+    if (!mounted) return;
     Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => const SignInScreen()),
       (route) => false,
@@ -33,7 +53,7 @@ class DeleteAccountConfirmScreen extends StatelessWidget {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded,
                 color: KaziColors.primary, size: 20),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: _busy ? null : () => Navigator.of(context).pop(),
           ),
         ),
         body: SafeArea(
@@ -42,10 +62,10 @@ class DeleteAccountConfirmScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Delete account?', style: KaziTextStyles.heading),
+                Text(t(context, 'settings.deleteTitle'), style: KaziTextStyles.heading),
                 const SizedBox(height: 12),
                 Text(
-                  'This will remove your account from this device. You will go back to the welcome screen.',
+                  t(context, 'settings.deleteBody'),
                   style: KaziTextStyles.subtitle.copyWith(
                     color: KaziColors.textPrimary,
                   ),
@@ -55,28 +75,38 @@ class DeleteAccountConfirmScreen extends StatelessWidget {
                   width: double.infinity,
                   height: 54,
                   child: ElevatedButton(
-                    onPressed: () => _confirm(context),
+                    onPressed: _busy ? null : _confirm,
                     style: ElevatedButton.styleFrom(
                       elevation: 0,
                       backgroundColor: KaziColors.statusPending,
                       foregroundColor: KaziColors.white,
+                      disabledBackgroundColor: KaziColors.statusPending,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    child: Text(
-                      'Delete account',
-                      style: KaziTextStyles.button.copyWith(
-                        color: KaziColors.white,
-                      ),
-                    ),
+                    child: _busy
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: KaziColors.white,
+                            ),
+                          )
+                        : Text(
+                            t(context, 'settings.delete'),
+                            style: KaziTextStyles.button.copyWith(
+                              color: KaziColors.white,
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 12),
                 KaziButton(
-                  label: 'Cancel',
+                  label: t(context, 'common.cancel'),
                   variant: KaziButtonVariant.outline,
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: _busy ? null : () => Navigator.of(context).pop(),
                 ),
               ],
             ),

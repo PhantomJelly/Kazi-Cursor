@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
 
@@ -19,7 +20,15 @@ class AvailabilityCalendar extends StatelessWidget {
   static DateTime dateOnly(DateTime value) =>
       DateTime(value.year, value.month, value.day);
 
-  static const _weekdays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  static const _weekdayKeys = [
+    'weekday.m',
+    'weekday.t',
+    'weekday.w',
+    'weekday.th',
+    'weekday.f',
+    'weekday.s',
+    'weekday.su',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +38,7 @@ class AvailabilityCalendar extends StatelessWidget {
     final leadingEmpty = (firstOfMonth.weekday + 6) % 7;
     final today = dateOnly(DateTime.now());
     final monthLabel =
-        '${_monthName(visibleMonth.month)} ${visibleMonth.year}';
+        '${t(context, 'month.${visibleMonth.month}')} ${visibleMonth.year}';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -70,11 +79,11 @@ class AvailabilityCalendar extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Row(
-            children: _weekdays
+            children: _weekdayKeys
                 .map(
-                  (day) => Expanded(
+                  (key) => Expanded(
                     child: Text(
-                      day,
+                      t(context, key),
                       textAlign: TextAlign.center,
                       style: KaziTextStyles.subtitle.copyWith(fontSize: 12),
                     ),
@@ -130,23 +139,5 @@ class AvailabilityCalendar extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  static String _monthName(int month) {
-    const names = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-    return names[month - 1];
   }
 }

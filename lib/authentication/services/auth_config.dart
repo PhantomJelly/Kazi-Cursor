@@ -6,7 +6,7 @@ class AuthConfig {
   AuthConfig._();
 
   static const String googleWebClientId =
-      'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com';
+      '887770333540-qdggn80dsoggu43a43lgjnr6um79vvhe.apps.googleusercontent.com';
 
   static const String _placeholderPrefix = 'YOUR_WEB_CLIENT_ID';
 

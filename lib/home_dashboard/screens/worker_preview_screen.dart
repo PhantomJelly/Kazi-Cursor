@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kazi/core_workflow/screens/send_inquiry_screen.dart';
-import 'package:kazi/home_dashboard/models/demo_worker.dart';
+import 'package:kazi/home_dashboard/models/directory_worker.dart';
 import 'package:kazi/home_dashboard/widgets/worker_photo.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
 import 'package:kazi/shared/widgets/kazi_button.dart';
@@ -10,7 +11,7 @@ import 'package:kazi/shared/widgets/kazi_button.dart';
 class WorkerPreviewScreen extends StatelessWidget {
   const WorkerPreviewScreen({super.key, required this.worker});
 
-  final DemoWorker worker;
+  final DirectoryWorker worker;
 
   void _openInquiry(BuildContext context) {
     Navigator.of(context).push(
@@ -89,60 +90,77 @@ class WorkerPreviewScreen extends StatelessWidget {
                           ),
                         ),
                       ],
-                      const SizedBox(height: 8),
-                      Text(
-                        worker.trade.label,
-                        style: KaziTextStyles.button,
-                        textAlign: TextAlign.center,
-                      ),
+                      if (worker.tradeLabel.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          worker.tradeLabel,
+                          style: KaziTextStyles.button,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                       const SizedBox(height: 6),
                       Text(
-                        '${worker.town}, ${worker.country}',
+                        [
+                          worker.town,
+                          worker.country,
+                        ].where((part) => part.isNotEmpty).join(', '),
                         style: KaziTextStyles.subtitle.copyWith(
                           color: KaziColors.textPrimary,
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        worker.experience,
-                        style: KaziTextStyles.subtitle.copyWith(fontSize: 14),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 28),
-                      Text('About', style: KaziTextStyles.label),
-                      const SizedBox(height: 8),
-                      Text(worker.bio, style: KaziTextStyles.input),
-                      const SizedBox(height: 28),
-                      Text('Past jobs', style: KaziTextStyles.label),
-                      const SizedBox(height: 12),
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: worker.portfolioPhotoUrls.length,
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
+                      if (worker.experienceLabel.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          worker.experienceLabel,
+                          style: KaziTextStyles.subtitle.copyWith(fontSize: 14),
+                          textAlign: TextAlign.center,
                         ),
-                        itemBuilder: (context, index) {
-                          return ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.network(
-                              worker.portfolioPhotoUrls[index],
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => Container(
-                                color: KaziColors.grey8,
-                                child: const Icon(
-                                  Icons.photo_outlined,
-                                  color: KaziColors.grey,
+                      ],
+                      if (worker.bio.trim().isNotEmpty) ...[
+                        const SizedBox(height: 28),
+                        Text(
+                          t(context, 'inquiry.aboutWorker'),
+                          style: KaziTextStyles.label,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(worker.bio, style: KaziTextStyles.input),
+                      ],
+                      if (worker.portfolioPhotoUrls.isNotEmpty) ...[
+                        const SizedBox(height: 28),
+                        Text(
+                          t(context, 'inquiry.pastJobs'),
+                          style: KaziTextStyles.label,
+                        ),
+                        const SizedBox(height: 12),
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: worker.portfolioPhotoUrls.length,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                          ),
+                          itemBuilder: (context, index) {
+                            return ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                worker.portfolioPhotoUrls[index],
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) => Container(
+                                  color: KaziColors.grey8,
+                                  child: const Icon(
+                                    Icons.photo_outlined,
+                                    color: KaziColors.grey,
+                                  ),
                                 ),
                               ),
-                            ),
-                          );
-                        },
-                      ),
+                            );
+                          },
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -150,7 +168,7 @@ class WorkerPreviewScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                 child: KaziButton(
-                  label: 'Send inquiry',
+                  label: t(context, 'search.sendInquiry'),
                   onPressed: () => _openInquiry(context),
                 ),
               ),

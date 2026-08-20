@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:kazi/authentication/services/local_account_store.dart';
 import 'package:kazi/core_workflow/models/job_inquiry.dart';
 import 'package:kazi/core_workflow/screens/inquiry_sent_screen.dart';
 import 'package:kazi/core_workflow/services/inquiry_store.dart';
 import 'package:kazi/core_workflow/widgets/availability_calendar.dart';
-import 'package:kazi/home_dashboard/models/demo_worker.dart';
+import 'package:kazi/home_dashboard/models/directory_worker.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/profile/services/customer_profile_store.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
@@ -14,7 +16,7 @@ import 'package:kazi/shared/widgets/kazi_text_field.dart';
 class SendInquiryScreen extends StatefulWidget {
   const SendInquiryScreen({super.key, required this.worker});
 
-  final DemoWorker worker;
+  final DirectoryWorker worker;
 
   @override
   State<SendInquiryScreen> createState() => _SendInquiryScreenState();
@@ -28,6 +30,7 @@ class _SendInquiryScreenState extends State<SendInquiryScreen> {
   bool? _isUrgent;
   DateTime _visibleMonth = DateTime(DateTime.now().year, DateTime.now().month);
   final Set<DateTime> _freeDays = {};
+  var _sending = false;
 
   @override
   void initState() {
@@ -65,7 +68,7 @@ class _SendInquiryScreenState extends State<SendInquiryScreen> {
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
               primary: KaziColors.primary,
-              onPrimary: KaziColors.grey,
+              onPrimary: KaziColors.white,
               onSurface: KaziColors.textPrimary,
             ),
           ),
@@ -81,8 +84,8 @@ class _SendInquiryScreenState extends State<SendInquiryScreen> {
   Future<void> _send() async {
     if (!_isComplete) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill in every section before sending'),
+        SnackBar(
+          content: Text(t(context, 'inquiry.fillEvery')),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -90,11 +93,65 @@ class _SendInquiryScreenState extends State<SendInquiryScreen> {
     }
 
     final customer = CustomerProfileStore.instance.profile;
-    if (customer == null) return;
+    if (customer == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(t(context, 'inquiry.completeProfile')),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
+    if (InquiryStore.instance.hasPendingFor(
+      workerId: widget.worker.id,
+      customer: customer,
+    )) {
+      final continueAnyway = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            backgroundColor: KaziColors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Text(t(context, 'inquiry.alreadyTitle'), style: KaziTextStyles.button),
+            content: Text(
+              t(context, 'inquiry.alreadyBody'),
+              style: KaziTextStyles.input,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: Text(t(context, 'common.cancel'), style: KaziTextStyles.footerLink),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: Text(t(context, 'inquiry.sendAnyway'), style: KaziTextStyles.footerLink),
+              ),
+            ],
+          );
+        },
+      );
+      if (continueAnyway != true || !mounted) return;
+    }
+
+    final customerId = LocalAccountStore.instance.current?.id ?? '';
+    if (customerId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(t(context, 'inquiry.signInAgain')),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _sending = true);
     final inquiry = JobInquiry.fromForm(
       worker: widget.worker,
       customer: customer,
+      customerId: customerId,
       title: _titleController.text.trim(),
       description: _descriptionController.text.trim(),
       occurredOn: _occurredOn!,
@@ -102,7 +159,19 @@ class _SendInquiryScreenState extends State<SendInquiryScreen> {
       freeDays: (_freeDays.toList()..sort()),
       isUrgent: _isUrgent!,
     );
-    await InquiryStore.instance.add(inquiry);
+    try {
+      await InquiryStore.instance.add(inquiry);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _sending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(t(context, 'inquiry.sendFailed')),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
     CustomerProfileStore.instance.recordContactedWorker(widget.worker.id);
 
     if (!mounted) return;
@@ -129,7 +198,7 @@ class _SendInquiryScreenState extends State<SendInquiryScreen> {
                 color: KaziColors.primary, size: 20),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          title: Text('Send inquiry', style: KaziTextStyles.button),
+          title: Text(t(context, 'inquiry.sendTitle'), style: KaziTextStyles.button),
         ),
         body: SafeArea(
           child: Column(
@@ -141,28 +210,37 @@ class _SendInquiryScreenState extends State<SendInquiryScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Tell ${widget.worker.name.split(' ').first} about the job',
+                        t(
+                          context,
+                          'inquiry.tellAbout',
+                          {'name': widget.worker.name.split(' ').first},
+                        ),
                         style: KaziTextStyles.heading.copyWith(fontSize: 24),
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        widget.worker.trade.label,
-                        style: KaziTextStyles.subtitle.copyWith(
-                          color: KaziColors.textPrimary,
+                      if (widget.worker.tradeLabel.isNotEmpty)
+                        Text(
+                          widget.worker.tradeLabel,
+                          style: KaziTextStyles.subtitle.copyWith(
+                            color: KaziColors.textPrimary,
+                          ),
                         ),
-                      ),
                       const SizedBox(height: 28),
+
+                      // Title
                       KaziTextField(
                         controller: _titleController,
-                        label: 'Issue title',
-                        hint: 'e.g. Leaky tap',
+                        label: t(context, 'inquiry.issueTitle'),
+                        hint: t(context, 'inquiry.issueHint'),
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 24),
-                      Text('Project description', style: KaziTextStyles.label),
+
+                      // Description
+                      Text(t(context, 'inquiry.projectDesc'), style: KaziTextStyles.label),
                       const SizedBox(height: 8),
                       Text(
-                        'Describe the issue so the worker knows what to expect.',
+                        t(context, 'inquiry.projectHint'),
                         style: KaziTextStyles.subtitle.copyWith(fontSize: 13),
                       ),
                       const SizedBox(height: 12),
@@ -171,8 +249,7 @@ class _SendInquiryScreenState extends State<SendInquiryScreen> {
                         maxLines: 6,
                         style: KaziTextStyles.input,
                         decoration: InputDecoration(
-                          hintText:
-                              'e.g. The kitchen tap has been dripping and the cupboard below is getting wet...',
+                          hintText: t(context, 'inquiry.projectHint'),
                           hintStyle: KaziTextStyles.input.copyWith(
                             color: KaziColors.textHint,
                           ),
@@ -203,7 +280,9 @@ class _SendInquiryScreenState extends State<SendInquiryScreen> {
                         ),
                       ),
                       const SizedBox(height: 28),
-                      Text('When did it happen?', style: KaziTextStyles.label),
+
+                      // When it happened
+                      Text(t(context, 'inquiry.when'), style: KaziTextStyles.label),
                       const SizedBox(height: 12),
                       GestureDetector(
                         onTap: _pickOccurredOn,
@@ -229,7 +308,7 @@ class _SendInquiryScreenState extends State<SendInquiryScreen> {
                               Expanded(
                                 child: Text(
                                   _occurredOn == null
-                                      ? 'Select the day the issue occurred'
+                                      ? t(context, 'inquiry.when')
                                       : formatInquiryDate(_occurredOn!),
                                   style: KaziTextStyles.input.copyWith(
                                     color: _occurredOn == null
@@ -258,14 +337,16 @@ class _SendInquiryScreenState extends State<SendInquiryScreen> {
                         );
                       }),
                       const SizedBox(height: 12),
-                      Text('Urgency', style: KaziTextStyles.label),
+
+                      // Urgency
+                      Text(t(context, 'inquiry.urgency'), style: KaziTextStyles.label),
                       const SizedBox(height: 12),
                       GestureDetector(
                         onTap: () => setState(() => _isUrgent = false),
                         child: _SelectTile(
                           selected: _isUrgent == false,
-                          title: 'Not urgent',
-                          subtitle: 'Can wait for a regular booking',
+                          title: t(context, 'inquiry.notUrgent'),
+                          subtitle: t(context, 'inquiry.notUrgentSub'),
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -302,14 +383,14 @@ class _SendInquiryScreenState extends State<SendInquiryScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Urgent',
+                                      t(context, 'inquiry.isUrgent'),
                                       style: KaziTextStyles.button.copyWith(
                                         color: KaziColors.urgent,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'Needs fixing in a few hours, or in the next day or 2.',
+                                      t(context, 'inquiry.isUrgentSub'),
                                       style: KaziTextStyles.subtitle.copyWith(
                                         fontSize: 13,
                                         color: KaziColors.textPrimary,
@@ -317,7 +398,7 @@ class _SendInquiryScreenState extends State<SendInquiryScreen> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      'You will need to pay more, as we would need the worker during odd hours.',
+                                      t(context, 'inquiry.urgentPay'),
                                       style: KaziTextStyles.subtitle.copyWith(
                                         fontSize: 13,
                                       ),
@@ -330,10 +411,12 @@ class _SendInquiryScreenState extends State<SendInquiryScreen> {
                         ),
                       ),
                       const SizedBox(height: 28),
-                      Text('Days you are free', style: KaziTextStyles.label),
+
+                      // Days the customer is free
+                      Text(t(context, 'inquiry.daysFree'), style: KaziTextStyles.label),
                       const SizedBox(height: 8),
                       Text(
-                        'Select multiple days as they might have a busy schedule.',
+                        t(context, 'inquiry.daysFreeHint'),
                         style: KaziTextStyles.subtitle.copyWith(fontSize: 13),
                       ),
                       const SizedBox(height: 12),
@@ -369,8 +452,9 @@ class _SendInquiryScreenState extends State<SendInquiryScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                 child: KaziButton(
-                  label: 'Send inquiry',
-                  onPressed: _isComplete ? _send : null,
+                  label: t(context, 'inquiry.sendTitle'),
+                  isLoading: _sending,
+                  onPressed: _isComplete && !_sending ? _send : null,
                 ),
               ),
             ],

@@ -7,6 +7,7 @@ import 'package:kazi/profile/screens/worker_portfolio_screen.dart';
 import 'package:kazi/profile/screens/worker_verification_screen.dart';
 import 'package:kazi/profile/screens/worker_work_history_screen.dart';
 import 'package:kazi/profile/services/worker_profile_store.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/profile/widgets/profile_progress_bar.dart';
 import 'package:kazi/profile/widgets/profile_section_tile.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
@@ -41,8 +42,8 @@ class _WorkerProfileSectionsScreenState
   Widget build(BuildContext context) {
     final profile = WorkerProfileStore.instance.profile;
     if (profile == null) {
-      return const Scaffold(
-        body: Center(child: Text('No worker profile found')),
+      return Scaffold(
+        body: Center(child: Text(t(context, 'profile.noWorker'))),
       );
     }
 
@@ -64,7 +65,7 @@ class _WorkerProfileSectionsScreenState
             onPressed: () => Navigator.of(context).pop(),
           ),
           title: Text(
-            isComplete ? 'Edit profile' : 'Complete your profile',
+            isComplete ? t(context, 'common.editProfile') : t(context, 'profile.completeYours'),
             style: KaziTextStyles.button,
           ),
         ),
@@ -96,8 +97,8 @@ class _WorkerProfileSectionsScreenState
     return Column(
       children: [
         ProfileSectionTile(
-          title: 'General information',
-          subtitle: 'Name, location, phone and WhatsApp',
+          title: t(context, 'profile.general'),
+          subtitle: t(context, 'profile.generalSub'),
           isComplete: profile.isGeneralInfoComplete,
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute<void>(
@@ -107,8 +108,8 @@ class _WorkerProfileSectionsScreenState
         ),
         const SizedBox(height: 12),
         ProfileSectionTile(
-          title: 'Work history',
-          subtitle: 'Specialisation, experience and photo',
+          title: t(context, 'profile.workHistory'),
+          subtitle: t(context, 'profile.workHistorySub'),
           isComplete: profile.isWorkHistoryComplete,
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute<void>(
@@ -118,8 +119,8 @@ class _WorkerProfileSectionsScreenState
         ),
         const SizedBox(height: 12),
         ProfileSectionTile(
-          title: 'Work portfolio',
-          subtitle: 'Bio and photos of past jobs',
+          title: t(context, 'profile.portfolio'),
+          subtitle: t(context, 'profile.portfolioSub'),
           isComplete: profile.isPortfolioComplete,
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute<void>(
@@ -129,8 +130,8 @@ class _WorkerProfileSectionsScreenState
         ),
         const SizedBox(height: 12),
         ProfileSectionTile(
-          title: 'Verification',
-          subtitle: 'Upload ID or passport and scan your face',
+          title: t(context, 'profile.verification'),
+          subtitle: t(context, 'profile.verificationSub'),
           isComplete: profile.isVerificationComplete,
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute<void>(
@@ -140,8 +141,8 @@ class _WorkerProfileSectionsScreenState
         ),
         const SizedBox(height: 12),
         ProfileSectionTile(
-          title: 'Certifications',
-          subtitle: 'Attach certificates to earn Certified badge',
+          title: t(context, 'profile.certifications'),
+          subtitle: t(context, 'profile.certsSub'),
           isComplete: profile.isCertificationsComplete,
           isBonus: true,
           onTap: () => Navigator.of(context).push(

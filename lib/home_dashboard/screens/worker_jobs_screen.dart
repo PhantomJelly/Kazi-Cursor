@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:kazi/core_workflow/models/job_inquiry.dart';
 import 'package:kazi/core_workflow/screens/worker_job_detail_screen.dart';
 import 'package:kazi/core_workflow/services/inquiry_store.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
 
@@ -30,7 +31,7 @@ class _WorkerJobsScreenState extends State<WorkerJobsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final jobs = InquiryStore.instance.inquiries;
+    final jobs = InquiryStore.instance.jobsForViewer;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark.copyWith(
@@ -45,21 +46,24 @@ class _WorkerJobsScreenState extends State<WorkerJobsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Jobs', style: KaziTextStyles.heading),
+                Text(t(context, 'jobs.title'), style: KaziTextStyles.heading),
                 const SizedBox(height: 8),
                 Text(
-                  'Inquiries from customers.',
+                  t(context, 'jobs.subtitle'),
                   style: KaziTextStyles.subtitle.copyWith(
                     color: KaziColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 24),
                 Expanded(
-                  child: jobs.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
+                  child: RefreshIndicator(
+                    color: KaziColors.primary,
+                    onRefresh: InquiryStore.instance.refresh,
+                    child: jobs.isEmpty
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
                             children: [
+                              const SizedBox(height: 80),
                               const Icon(
                                 Icons.work_outline,
                                 size: 48,
@@ -67,29 +71,32 @@ class _WorkerJobsScreenState extends State<WorkerJobsScreen> {
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                'No inquiries yet',
+                                t(context, 'jobs.empty'),
                                 style: KaziTextStyles.button.copyWith(
                                   color: KaziColors.grey,
                                 ),
+                                textAlign: TextAlign.center,
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'When a customer sends an inquiry, it will show up here.',
+                                t(context, 'jobs.emptyHint'),
                                 style: KaziTextStyles.subtitle.copyWith(
                                   fontSize: 14,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
                             ],
+                          )
+                        : ListView.separated(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            itemCount: jobs.length,
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(height: 10),
+                            itemBuilder: (context, index) {
+                              return _JobTile(inquiry: jobs[index]);
+                            },
                           ),
-                        )
-                      : ListView.separated(
-                          itemCount: jobs.length,
-                          separatorBuilder: (_, _) => const SizedBox(height: 10),
-                          itemBuilder: (context, index) {
-                            return _JobTile(inquiry: jobs[index]);
-                          },
-                        ),
+                  ),
                 ),
               ],
             ),
@@ -134,7 +141,7 @@ class _JobTile extends StatelessWidget {
                 ),
                 if (inquiry.isUrgent)
                   Text(
-                    'URGENT',
+                    t(context, 'common.urgent'),
                     style: KaziTextStyles.button.copyWith(
                       color: KaziColors.urgent,
                       fontSize: 11,

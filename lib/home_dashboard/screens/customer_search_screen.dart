@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:kazi/home_dashboard/models/demo_worker.dart';
+import 'package:kazi/home_dashboard/models/directory_worker.dart';
 import 'package:kazi/home_dashboard/screens/worker_preview_screen.dart';
+import 'package:kazi/home_dashboard/services/worker_directory_store.dart';
 import 'package:kazi/home_dashboard/widgets/worker_photo.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/shared/constants/trade_categories.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
@@ -19,20 +21,32 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
   TradeCategory? _selectedTrade;
 
   @override
+  void initState() {
+    super.initState();
+    WorkerDirectoryStore.instance.addListener(_onDirectoryChanged);
+    WorkerDirectoryStore.instance.refresh();
+  }
+
+  @override
   void dispose() {
+    WorkerDirectoryStore.instance.removeListener(_onDirectoryChanged);
     _searchController.dispose();
     super.dispose();
   }
 
-  List<DemoWorker> get _results {
+  void _onDirectoryChanged() {
+    if (mounted) setState(() {});
+  }
+
+  List<DirectoryWorker> get _results {
     final query = _searchController.text.trim().toLowerCase();
-    return demoWorkers.where((worker) {
+    return WorkerDirectoryStore.instance.workers.where((worker) {
       final matchesTrade =
-          _selectedTrade == null || worker.trade == _selectedTrade;
+          _selectedTrade == null || worker.trades.contains(_selectedTrade);
       final matchesQuery = query.isEmpty ||
           worker.name.toLowerCase().contains(query) ||
-          worker.trade.label.toLowerCase().contains(query) ||
-          worker.town.toLowerCase().contains(query);
+          worker.town.toLowerCase().contains(query) ||
+          worker.tradeLabel.toLowerCase().contains(query);
       return matchesTrade && matchesQuery;
     }).toList();
   }
@@ -40,6 +54,9 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
   @override
   Widget build(BuildContext context) {
     final results = _results;
+    final store = WorkerDirectoryStore.instance;
+    final loading = store.loading && store.workers.isEmpty;
+    final loadFailed = store.loadFailed && store.workers.isEmpty;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark.copyWith(
@@ -57,10 +74,10 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Find workers', style: KaziTextStyles.heading),
+                    Text(t(context, 'search.title'), style: KaziTextStyles.heading),
                     const SizedBox(height: 8),
                     Text(
-                      'Search by name, trade or town.',
+                      t(context, 'search.subtitle'),
                       style: KaziTextStyles.subtitle.copyWith(
                         color: KaziColors.textPrimary,
                       ),
@@ -72,7 +89,7 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
                       style: KaziTextStyles.input,
                       textInputAction: TextInputAction.search,
                       decoration: InputDecoration(
-                        hintText: 'Search workers',
+                        hintText: t(context, 'search.hint'),
                         hintStyle: KaziTextStyles.input.copyWith(
                           color: KaziColors.textHint,
                         ),
@@ -116,7 +133,7 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
                         scrollDirection: Axis.horizontal,
                         children: [
                           _TradeChip(
-                            label: 'All',
+                            label: t(context, 'common.all'),
                             selected: _selectedTrade == null,
                             onTap: () => setState(() => _selectedTrade = null),
                           ),
@@ -137,45 +154,91 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
                   ],
                 ),
               ),
+              // Results
               Expanded(
-                child: results.isEmpty
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
+                child: loading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          color: KaziColors.primary,
+                        ),
+                      )
+                    : loadFailed
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
                             children: [
+                              const SizedBox(height: 80),
                               const Icon(
-                                Icons.search_off_outlined,
+                                Icons.wifi_off_outlined,
                                 size: 48,
                                 color: KaziColors.grey30,
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                'No workers found',
+                                t(context, 'search.loadFailed'),
                                 style: KaziTextStyles.button.copyWith(
                                   color: KaziColors.grey,
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Try a different name, trade or town.',
-                                style: KaziTextStyles.subtitle.copyWith(
-                                  fontSize: 14,
-                                ),
                                 textAlign: TextAlign.center,
                               ),
+                              const SizedBox(height: 16),
+                              Center(
+                                child: TextButton(
+                                  onPressed:
+                                      WorkerDirectoryStore.instance.refresh,
+                                  child: Text(
+                                    t(context, 'search.retry'),
+                                    style: KaziTextStyles.footerLink,
+                                  ),
+                                ),
+                              ),
                             ],
-                          ),
-                        ),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-                        itemCount: results.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 10),
-                        itemBuilder: (context, index) {
-                          return _WorkerResultTile(worker: results[index]);
-                        },
+                          )
+                    : RefreshIndicator(
+                        color: KaziColors.primary,
+                        onRefresh: WorkerDirectoryStore.instance.refresh,
+                        child: results.isEmpty
+                            ? ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                children: [
+                                  const SizedBox(height: 80),
+                                  const Icon(
+                                    Icons.search_off_outlined,
+                                    size: 48,
+                                    color: KaziColors.grey30,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    t(context, 'search.empty'),
+                                    style: KaziTextStyles.button.copyWith(
+                                      color: KaziColors.grey,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                    ),
+                                    child: Text(
+                                      t(context, 'search.emptyHint'),
+                                      style: KaziTextStyles.subtitle.copyWith(
+                                        fontSize: 14,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : ListView.separated(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+                                itemCount: results.length,
+                                separatorBuilder: (_, _) =>
+                                    const SizedBox(height: 10),
+                                itemBuilder: (context, index) {
+                                  return _WorkerResultTile(worker: results[index]);
+                                },
+                              ),
                       ),
               ),
             ],
@@ -229,7 +292,7 @@ class _TradeChip extends StatelessWidget {
 class _WorkerResultTile extends StatelessWidget {
   const _WorkerResultTile({required this.worker});
 
-  final DemoWorker worker;
+  final DirectoryWorker worker;
 
   @override
   Widget build(BuildContext context) {
@@ -242,51 +305,55 @@ class _WorkerResultTile extends StatelessWidget {
         );
       },
       child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: KaziColors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: KaziColors.grey15, width: 1.5),
-      ),
-      child: Row(
-        children: [
-          WorkerPhoto(
-            photoUrl: worker.photoUrl,
-            radius: 24,
-            heroTag: worker.heroTag,
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(worker.name, style: KaziTextStyles.button),
-                    ),
-                    if (worker.isCertified) ...[
-                      const SizedBox(width: 6),
-                      const Icon(Icons.star, color: KaziColors.primary, size: 16),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${worker.trade.label} · ${worker.town}',
-                  style: KaziTextStyles.subtitle.copyWith(fontSize: 13),
-                ),
-                Text(
-                  worker.experience,
-                  style: KaziTextStyles.subtitle.copyWith(fontSize: 13),
-                ),
-              ],
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: KaziColors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: KaziColors.grey15, width: 1.5),
+        ),
+        child: Row(
+          children: [
+            WorkerPhoto(
+              photoUrl: worker.photoUrl,
+              radius: 24,
+              heroTag: worker.heroTag,
             ),
-          ),
-          const Icon(Icons.chevron_right_rounded, color: KaziColors.primary),
-        ],
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(worker.name, style: KaziTextStyles.button),
+                      ),
+                      if (worker.isCertified) ...[
+                        const SizedBox(width: 6),
+                        const Icon(Icons.star, color: KaziColors.primary, size: 16),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    [
+                      if (worker.tradeLabel.isNotEmpty) worker.tradeLabel,
+                      worker.town,
+                    ].where((part) => part.isNotEmpty).join(' · '),
+                    style: KaziTextStyles.subtitle.copyWith(fontSize: 13),
+                  ),
+                  if (worker.experienceLabel.isNotEmpty)
+                    Text(
+                      worker.experienceLabel,
+                      style: KaziTextStyles.subtitle.copyWith(fontSize: 13),
+                    ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: KaziColors.primary),
+          ],
+        ),
       ),
-    ),
     );
   }
 }

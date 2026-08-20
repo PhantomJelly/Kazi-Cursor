@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:kazi/home_dashboard/screens/customer_search_screen.dart';
+import 'package:kazi/home_dashboard/services/worker_directory_store.dart';
 import 'package:kazi/profile/screens/customer_profile_screen.dart';
 import 'package:kazi/settings/screens/settings_screen.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 
 class CustomerAppShell extends StatefulWidget {
@@ -36,7 +38,12 @@ class _CustomerAppShellState extends State<CustomerAppShell> {
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
-          onTap: (index) => setState(() => _currentIndex = index),
+          onTap: (index) {
+            setState(() => _currentIndex = index);
+            if (index == 0) {
+              WorkerDirectoryStore.instance.refresh();
+            }
+          },
           backgroundColor: KaziColors.white,
           selectedItemColor: KaziColors.primary,
           unselectedItemColor: KaziColors.grey,
@@ -44,21 +51,21 @@ class _CustomerAppShellState extends State<CustomerAppShell> {
           elevation: 0,
           selectedFontSize: 12,
           unselectedFontSize: 12,
-          items: const [
+          items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.search_outlined),
-              activeIcon: Icon(Icons.search),
-              label: 'Search',
+              icon: const Icon(Icons.search_outlined),
+              activeIcon: const Icon(Icons.search),
+              label: t(context, 'nav.search'),
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Profile',
+              icon: const Icon(Icons.person_outline),
+              activeIcon: const Icon(Icons.person),
+              label: t(context, 'nav.profile'),
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.settings_outlined),
-              activeIcon: Icon(Icons.settings),
-              label: 'Settings',
+              icon: const Icon(Icons.settings_outlined),
+              activeIcon: const Icon(Icons.settings),
+              label: t(context, 'nav.settings'),
             ),
           ],
         ),

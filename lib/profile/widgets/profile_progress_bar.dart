@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
 
@@ -24,9 +25,12 @@ class ProfileProgressBar extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Profile completion', style: KaziTextStyles.label),
+            Text(t(context, 'profile.completion'), style: KaziTextStyles.label),
             Text(
-              '$completedSections of $totalSections complete',
+              t(context, 'profile.ofComplete', {
+                'done': '$completedSections',
+                'total': '$totalSections',
+              }),
               style: KaziTextStyles.subtitle.copyWith(
                 fontSize: 13,
                 color: KaziColors.textPrimary,
@@ -46,7 +50,9 @@ class ProfileProgressBar extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          '${(progress * 100).round()}% complete',
+          t(context, 'profile.percentComplete', {
+            'percent': '${(progress * 100).round()}',
+          }),
           style: KaziTextStyles.subtitle.copyWith(fontSize: 13),
         ),
         if (bonusComplete != null) ...[
@@ -69,7 +75,7 @@ class ProfileProgressBar extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'BONUS',
+                  t(context, 'profile.bonus'),
                   style: KaziTextStyles.button.copyWith(
                     fontSize: 12,
                     color: KaziColors.primary,
@@ -80,7 +86,7 @@ class ProfileProgressBar extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Certifications',
+                    t(context, 'profile.certifications'),
                     style: KaziTextStyles.subtitle.copyWith(
                       fontSize: 13,
                       color: KaziColors.textPrimary,
