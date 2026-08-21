@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:kazi/authentication/models/local_account.dart';
 import 'package:kazi/authentication/models/sign_up_data.dart';
 import 'package:kazi/authentication/models/user_role.dart';
@@ -275,15 +277,28 @@ class LocalAccountStore {
     WorkerProfileStore.instance.clear();
     CustomerProfileStore.instance.clear();
     InquiryStore.instance.bindViewer();
+    unawaited(_finishSignOut());
+  }
+
+  Future<void> _finishSignOut() async {
     try {
-      await _client.auth.signOut();
+      await InquiryStore.instance
+          .stopRealtime()
+          .timeout(const Duration(seconds: 2));
     } catch (_) {}
-    await InquiryStore.instance.refresh();
+    try {
+      await _client.auth.signOut().timeout(const Duration(seconds: 2));
+    } catch (_) {}
+    try {
+      await InquiryStore.instance.refresh();
+    } catch (_) {}
   }
 
   Future<void> deleteCurrentAccount() async {
     try {
-      await _client.rpc('delete_own_account');
+      await _client
+          .rpc('delete_own_account')
+          .timeout(const Duration(seconds: 3));
     } catch (_) {
       // Fall through to local sign-out even if the RPC is not installed yet.
     }

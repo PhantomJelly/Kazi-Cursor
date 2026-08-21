@@ -1,6 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:kazi/authentication/screens/sign_in_screen.dart';
+import 'package:kazi/authentication/services/auth_navigation.dart';
 import 'package:kazi/authentication/services/local_account_store.dart';
 import 'package:kazi/core_workflow/services/inquiry_store.dart';
 import 'package:kazi/l10n/kazi_l10n.dart';
@@ -20,26 +22,24 @@ class _DeleteAccountConfirmScreenState
     extends State<DeleteAccountConfirmScreen> {
   var _busy = false;
 
-  Future<void> _confirm() async {
+  void _confirm() {
     if (_busy) return;
     setState(() => _busy = true);
+    goToSignIn(context);
+    unawaited(_deleteInBackground());
+  }
+
+  Future<void> _deleteInBackground() async {
+    final account = LocalAccountStore.instance.current;
     try {
-      final account = LocalAccountStore.instance.current;
-      try {
-        await InquiryStore.instance.removeForUser(
-          email: account?.email ?? account?.customerProfile?.email ?? '',
-          phone: account?.phone ?? account?.customerProfile?.phone,
-        );
-      } catch (_) {}
+      await InquiryStore.instance.removeForUser(
+        email: account?.email ?? account?.customerProfile?.email ?? '',
+        phone: account?.phone ?? account?.customerProfile?.phone,
+      );
+    } catch (_) {}
+    try {
       await LocalAccountStore.instance.deleteCurrentAccount();
-    } catch (_) {
-      // Fall through so the user is still signed out locally.
-    }
-    if (!mounted) return;
-    Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => const SignInScreen()),
-      (route) => false,
-    );
+    } catch (_) {}
   }
 
   @override

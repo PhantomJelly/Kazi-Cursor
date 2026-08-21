@@ -1,6 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:kazi/authentication/screens/sign_in_screen.dart';
+import 'package:kazi/authentication/services/auth_navigation.dart';
 import 'package:kazi/authentication/services/local_account_store.dart';
 import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
@@ -10,17 +12,9 @@ import 'package:kazi/shared/widgets/kazi_button.dart';
 class LogoutConfirmScreen extends StatelessWidget {
   const LogoutConfirmScreen({super.key});
 
-  Future<void> _confirm(BuildContext context) async {
-    try {
-      await LocalAccountStore.instance.signOut();
-    } catch (_) {
-      // Still leave the session even if the network call fails.
-    }
-    if (!context.mounted) return;
-    Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => const SignInScreen()),
-      (route) => false,
-    );
+  void _confirm(BuildContext context) {
+    goToSignIn(context);
+    unawaited(LocalAccountStore.instance.signOut());
   }
 
   @override

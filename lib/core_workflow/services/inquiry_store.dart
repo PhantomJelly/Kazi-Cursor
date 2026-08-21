@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:kazi/authentication/models/user_role.dart';
 import 'package:kazi/core_workflow/models/job_inquiry.dart';
@@ -42,10 +44,8 @@ class InquiryStore extends ChangeNotifier {
   void bindViewer({UserRole? role, String? email}) {
     _viewerRole = role;
     _viewerEmail = email?.trim().toLowerCase();
-    if (role == null) {
-      stopRealtime();
-    } else {
-      startRealtime();
+    if (role != null) {
+      unawaited(startRealtime());
     }
   }
 
@@ -146,7 +146,7 @@ class InquiryStore extends ChangeNotifier {
     _channel = null;
     if (channel == null) return;
     try {
-      await _client.removeChannel(channel);
+      await _client.removeChannel(channel).timeout(const Duration(seconds: 2));
     } catch (_) {}
   }
 
