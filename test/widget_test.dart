@@ -11,7 +11,7 @@ void main() {
     expect(find.text('Welcome to'), findsOneWidget);
     expect(find.text('Kazi'), findsOneWidget);
     expect(find.text('Work made simple.'), findsOneWidget);
-    expect(find.text('Continue with Google'), findsOneWidget);
     expect(find.text('Continue with Email'), findsOneWidget);
+    expect(find.text('Continue with Google'), findsNothing);
   });
 }

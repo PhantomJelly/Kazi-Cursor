@@ -6,9 +6,10 @@ Kazi is a Flutter marketplace for Namibia that connects trade workers with custo
 
 Built for student hackathons as a working mobile product: two real user roles, live accounts, and a job-inquiry flow from search to accept or reject.
 
-**Try the web demo:** [https://phantomjelly.github.io/Kazi-Cursor/](https://phantomjelly.github.io/Kazi-Cursor/)
+**Live demo:** [https://phantomjelly.github.io/Kazi-Cursor/](https://phantomjelly.github.io/Kazi-Cursor/)  
+**Source:** [https://github.com/PhantomJelly/Kazi-Cursor](https://github.com/PhantomJelly/Kazi-Cursor)
 
-Use **email** sign-up for the most reliable try-out in the browser. Add that Pages URL in Google Cloud (JavaScript origin) and Supabase Auth (site URL / redirect) if you want Google sign-in on the hosted demo.
+Sign up with **email**. Google sign-in is turned off. Use **Settings → Log out** to return to the sign-in page.
 
 ---
 
@@ -33,7 +34,7 @@ Kazi gives both sides one place to meet: customers search by trade and town; wor
 | --- | --- |
 | App | [Flutter](https://flutter.dev) (Dart 3.13+) |
 | Backend | [Supabase](https://supabase.com) — Auth, Postgres, Storage, Realtime |
-| Sign-in | Email + [Google Sign-In](https://pub.dev/packages/google_sign_in) |
+| Sign-in | Email (Supabase Auth) |
 | Motion | [Lottie](https://pub.dev/packages/lottie) |
 
 **Brand colours:** navy `#03263A`, grey `#A8A8A8`, white.
@@ -44,10 +45,10 @@ Schema lives in [`supabase/schema.sql`](supabase/schema.sql).
 
 ## Demo (hackathon)
 
-Open the [live web demo](https://phantomjelly.github.io/Kazi-Cursor/) (or run locally). Use two accounts — one **worker**, one **customer**.
+Open the [live web demo](https://phantomjelly.github.io/Kazi-Cursor/) (or run locally). Create two **email** accounts — one **worker**, one **customer**.
 
 1. Sign up as a **worker**, complete name and town, then add a trade and photo if you can.
-2. Sign out.
+2. Open **Settings → Log out** (you should land on the sign-in page).
 3. Sign up as a **customer**.
 4. Open **Search**. The worker should appear (pull down to refresh if needed).
 5. Open the worker → **Send inquiry** → fill the form.
@@ -56,7 +57,7 @@ Open the [live web demo](https://phantomjelly.github.io/Kazi-Cursor/) (or run lo
 
 Hot restart (`R` in the Flutter terminal) after splash or asset changes.
 
-For judges: **email sign-up** is the reliable path on the hosted demo. If Google sign-in fails in the browser, the Pages origin is not on the Google OAuth client yet.
+For judges: use **email** sign-up on the hosted demo. If a tab was already open, hard-refresh (Ctrl+Shift+R) or use a private window so you are not on a cached old build.
 
 ---
 

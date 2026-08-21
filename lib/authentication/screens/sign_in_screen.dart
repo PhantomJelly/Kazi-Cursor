@@ -2,66 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kazi/authentication/screens/email_sign_in_screen.dart';
 import 'package:kazi/authentication/screens/sign_up_email_screen.dart';
-import 'package:kazi/authentication/services/auth_navigation.dart';
-import 'package:kazi/authentication/services/google_auth_service.dart';
-import 'package:kazi/authentication/services/local_account_store.dart';
-import 'package:kazi/authentication/widgets/auth_divider.dart';
 import 'package:kazi/authentication/widgets/auth_footer_link.dart';
-import 'package:kazi/authentication/widgets/google_logo.dart';
 import 'package:kazi/l10n/kazi_l10n.dart';
 import 'package:kazi/shared/theme/kazi_colors.dart';
 import 'package:kazi/shared/theme/kazi_text_styles.dart';
 import 'package:kazi/shared/widgets/kazi_button.dart';
 
-class SignInScreen extends StatefulWidget {
+class SignInScreen extends StatelessWidget {
   const SignInScreen({super.key});
-
-  @override
-  State<SignInScreen> createState() => _SignInScreenState();
-}
-
-class _SignInScreenState extends State<SignInScreen> {
-  final _googleAuthService = GoogleAuthService();
-  bool _isGoogleLoading = false;
-
-  Future<void> _signInWithGoogle() async {
-    setState(() => _isGoogleLoading = true);
-
-    try {
-      final user = await _googleAuthService.signIn();
-      if (!mounted) return;
-
-      if (user == null) return;
-
-      if (user.idToken == null || user.idToken!.isEmpty) {
-        throw Exception('Google did not return an ID token.');
-      }
-
-      final names = (user.displayName ?? 'Demo User').trim().split(' ');
-      final account = await LocalAccountStore.instance.completeGoogleSignIn(
-        idToken: user.idToken!,
-        accessToken: user.accessToken,
-        firstName: names.first,
-        lastName: names.length > 1 ? names.sublist(1).join(' ') : 'User',
-      );
-      if (!mounted) return;
-      openAccountHome(context, account);
-    } catch (error) {
-      if (!mounted) return;
-      final message = error is GoogleNotConfiguredException
-          ? t(context, 'auth.googleNotReady')
-          : t(context, 'auth.googleFailed', {'error': '$error'});
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: KaziColors.primary,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _isGoogleLoading = false);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -94,16 +42,6 @@ class _SignInScreenState extends State<SignInScreen> {
                   ),
                 ),
                 const Spacer(),
-                KaziButton(
-                  label: t(context, 'auth.continueGoogle'),
-                  variant: KaziButtonVariant.outline,
-                  leading: const GoogleLogo(),
-                  isLoading: _isGoogleLoading,
-                  onPressed: _signInWithGoogle,
-                ),
-                const SizedBox(height: 20),
-                const AuthDivider(),
-                const SizedBox(height: 20),
                 KaziButton(
                   label: t(context, 'auth.continueEmail'),
                   onPressed: () {
