@@ -27,25 +27,6 @@ Kazi gives both sides one place to meet: customers search by trade and town; wor
 
 ---
 
-## Features
-
-- **Splash** — branded Lottie intro (navy `#03263A` and white)
-- **Auth** — email sign-up / sign-in, Google sign-in, forgot password (Supabase)
-- **Roles** — worker or customer, chosen at sign-up
-- **Customer search** — live worker accounts from the database, filter by trade and search by name or town
-- **Worker profiles** — photo, trades, experience, bio, portfolio, optional Certified badge
-- **Job inquiries** — title, description, when it happened, urgency, and free days on a calendar
-- **Worker jobs** — pending list; accept, or reject with a written reason
-- **Contact after accept** — phone, WhatsApp, or email
-- **Photos** — camera or gallery; stored in Supabase (avatars, portfolio, verification, certificates)
-- **Notifications** — in-app job updates; Android local notifications when the app is in the background
-- **Languages** — English, Afrikaans, Deutsch, Português
-- **Settings** — language, notifications, about, log out, delete account
-
-**Trades:** electrician, plumber, gardener, outdoor cleaner, carpenter, handyman, indoor cleaner, pool technician.
-
----
-
 ## Tech stack
 
 | Layer | Choice |
@@ -105,37 +86,6 @@ flutter run -d emulator-5554
 flutter run -d chrome
 ```
 
-### First-time backend setup (new Supabase project)
-
-1. Create a project at [supabase.com](https://supabase.com).
-2. Run [`supabase/schema.sql`](supabase/schema.sql) in the SQL editor.
-3. Authentication → Providers → **Email**: turn off “Confirm email” while developing.
-4. Enable **Google** if you want Google sign-in (Web client ID + secret; Android client uses the app package + SHA-1).
-5. Confirm Storage buckets: `avatars`, `portfolio`, `verification`, `certificates`.
-6. Put Realtime on the `inquiries` table.
-7. Update `lib/supabase/supabase_config.dart` with your project URL and **publishable** (anon) key. Never put the `service_role` key in the app.
-
----
-
-## Project layout
-
-```
-lib/
-  authentication/   Sign-in, sign-up, splash
-  app_shell/        Customer and worker tab shells
-  home_dashboard/   Search, worker preview, jobs list
-  core_workflow/    Inquiries, calendar, job detail
-  profile/          Worker and customer profiles
-  settings/         Language, notifications, about
-  notifications/    In-app + local notifications
-  l10n/             EN / AF / DE / PT
-  supabase/         Client config and media uploads
-  shared/           Theme, colours, shared widgets
-supabase/
-  schema.sql        Tables, RLS, storage, realtime
-assets/lottie/      Splash animation
-```
-
 ---
 
 ## What’s next
@@ -147,19 +97,3 @@ Ideas if we keep building after the hackathon:
 - Push notifications (FCM) for job updates
 - Tighter inquiry permissions so a worker only sees their own jobs on the server
 - Ratings after a job is done
-
----
-
-## Team
-
-Student hackathon project. Add names and roles here before you submit.
-
-| Name | Role |
-| --- | --- |
-| | |
-
----
-
-## License
-
-Private student project. Not licensed for commercial reuse unless the team says otherwise.
