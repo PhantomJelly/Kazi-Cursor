@@ -35,7 +35,6 @@ Kazi gives both sides one place to meet: customers search by trade and town; wor
 | Backend | [Supabase](https://supabase.com) — Auth, Postgres, Storage, Realtime |
 | Sign-in | Email + [Google Sign-In](https://pub.dev/packages/google_sign_in) |
 | Motion | [Lottie](https://pub.dev/packages/lottie) |
-| Notifications | [flutter_local_notifications](https://pub.dev/packages/flutter_local_notifications) |
 
 **Brand colours:** navy `#03263A`, grey `#A8A8A8`, white.
 
