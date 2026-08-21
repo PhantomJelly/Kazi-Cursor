@@ -275,7 +275,9 @@ class LocalAccountStore {
     WorkerProfileStore.instance.clear();
     CustomerProfileStore.instance.clear();
     InquiryStore.instance.bindViewer();
-    await _client.auth.signOut();
+    try {
+      await _client.auth.signOut();
+    } catch (_) {}
     await InquiryStore.instance.refresh();
   }
 

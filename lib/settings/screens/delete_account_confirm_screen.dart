@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kazi/authentication/screens/sign_in_screen.dart';
-import 'package:kazi/authentication/services/google_auth_service.dart';
 import 'package:kazi/authentication/services/local_account_store.dart';
 import 'package:kazi/core_workflow/services/inquiry_store.dart';
 import 'package:kazi/l10n/kazi_l10n.dart';
@@ -24,13 +23,18 @@ class _DeleteAccountConfirmScreenState
   Future<void> _confirm() async {
     if (_busy) return;
     setState(() => _busy = true);
-    final account = LocalAccountStore.instance.current;
-    await InquiryStore.instance.removeForUser(
-      email: account?.email ?? account?.customerProfile?.email ?? '',
-      phone: account?.phone ?? account?.customerProfile?.phone,
-    );
-    await GoogleAuthService().signOut();
-    await LocalAccountStore.instance.deleteCurrentAccount();
+    try {
+      final account = LocalAccountStore.instance.current;
+      try {
+        await InquiryStore.instance.removeForUser(
+          email: account?.email ?? account?.customerProfile?.email ?? '',
+          phone: account?.phone ?? account?.customerProfile?.phone,
+        );
+      } catch (_) {}
+      await LocalAccountStore.instance.deleteCurrentAccount();
+    } catch (_) {
+      // Fall through so the user is still signed out locally.
+    }
     if (!mounted) return;
     Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => const SignInScreen()),

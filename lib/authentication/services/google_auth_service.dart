@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:kazi/authentication/models/auth_user.dart';
@@ -39,8 +41,8 @@ class GoogleAuthService {
   }
 
   Future<void> signOut() async {
-    if (_googleSignIn != null) {
-      await _googleSignIn!.signOut();
-    }
+    try {
+      await _googleSignIn?.signOut().timeout(const Duration(seconds: 2));
+    } catch (_) {}
   }
 }
